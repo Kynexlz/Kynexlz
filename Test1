@@ -1,0 +1,117 @@
+--// KynLife Hub by Kynexlz
+
+local player = game.Players.LocalPlayer
+local rs = game:GetService("ReplicatedStorage")
+
+-- SETTINGS
+local autoClick = false
+local autoSpeed = false
+local speedValue = 10
+
+-- GUI
+local gui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
+gui.Name = "KynLife"
+gui.ResetOnSpawn = false
+
+local main = Instance.new("Frame", gui)
+main.Size = UDim2.new(0, 260, 0, 230)
+main.Position = UDim2.new(0.35, 0, 0.3, 0)
+main.BackgroundColor3 = Color3.fromRGB(10,10,10)
+main.BorderSizePixel = 0
+main.Active = true
+main.Draggable = true
+
+Instance.new("UICorner", main).CornerRadius = UDim.new(0, 8)
+
+-- Outline
+local stroke = Instance.new("UIStroke", main)
+stroke.Color = Color3.fromRGB(255,255,255)
+stroke.Thickness = 1
+
+-- Title
+local title = Instance.new("TextLabel", main)
+title.Size = UDim2.new(1, 0, 0, 40)
+title.Text = "Kynexlz"
+title.TextColor3 = Color3.fromRGB(255,255,255)
+title.BackgroundTransparency = 1
+title.Font = Enum.Font.GothamBold
+title.TextSize = 18
+
+-- Toggle Creator
+local function createToggle(name, posY, callback)
+    local btn = Instance.new("TextButton", main)
+    btn.Size = UDim2.new(0.9, 0, 0, 35)
+    btn.Position = UDim2.new(0.05, 0, 0, posY)
+    btn.BackgroundColor3 = Color3.fromRGB(20,20,20)
+    btn.TextColor3 = Color3.fromRGB(255,255,255)
+    btn.Font = Enum.Font.Gotham
+    btn.TextSize = 14
+    btn.Text = name .. ": OFF"
+    
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0,6)
+
+    local state = false
+    btn.MouseButton1Click:Connect(function()
+        state = not state
+        btn.Text = name .. ": " .. (state and "ON" or "OFF")
+        callback(state)
+    end)
+end
+
+-- Slider
+local sliderFrame = Instance.new("Frame", main)
+sliderFrame.Size = UDim2.new(0.9, 0, 0, 40)
+sliderFrame.Position = UDim2.new(0.05, 0, 0, 150)
+sliderFrame.BackgroundColor3 = Color3.fromRGB(20,20,20)
+Instance.new("UICorner", sliderFrame)
+
+local sliderLabel = Instance.new("TextLabel", sliderFrame)
+sliderLabel.Size = UDim2.new(1, 0, 0.4, 0)
+sliderLabel.Text = "Speed: 10"
+sliderLabel.TextColor3 = Color3.fromRGB(255,255,255)
+sliderLabel.BackgroundTransparency = 1
+sliderLabel.Font = Enum.Font.Gotham
+
+local sliderBtn = Instance.new("TextButton", sliderFrame)
+sliderBtn.Size = UDim2.new(1, 0, 0.6, 0)
+sliderBtn.Position = UDim2.new(0,0,0.4,0)
+sliderBtn.Text = "Increase"
+sliderBtn.BackgroundTransparency = 1
+sliderBtn.TextColor3 = Color3.fromRGB(200,200,200)
+
+sliderBtn.MouseButton1Click:Connect(function()
+    speedValue += 5
+    sliderLabel.Text = "Speed: " .. speedValue
+end)
+
+-- Toggles
+createToggle("Auto Train Click", 50, function(v)
+    autoClick = v
+end)
+
+createToggle("Auto Train Speed", 95, function(v)
+    autoSpeed = v
+end)
+
+-- FAST LOOPS
+task.spawn(function()
+    while true do
+        if autoClick then
+            task.spawn(function()
+                rs.Remote.TrainSystem.ReqClickTrain:InvokeServer()
+            end)
+        end
+        task.wait() -- ultra fast
+    end
+end)
+
+task.spawn(function()
+    while true do
+        if autoSpeed then
+            task.spawn(function()
+                rs.Remote.TrainSystem.ReqUpdateTrainSpeed:InvokeServer(speedValue)
+            end)
+        end
+        task.wait()
+    end
+end)
