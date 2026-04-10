@@ -1,0 +1,100 @@
+local player = game.Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local hrp = character:WaitForChild("HumanoidRootPart")
+
+-- Target CFrame
+local targetCFrame = CFrame.new(
+	3477.50146, 0.434425354, 24.2043457,
+	0, 0, 1,
+	0, 1, 0,
+	-1, 0, 0
+)
+
+local loopEnabled = false
+
+-- GUI
+local screenGui = Instance.new("ScreenGui")
+screenGui.Parent = player:WaitForChild("PlayerGui")
+
+local mainFrame = Instance.new("Frame")
+mainFrame.Size = UDim2.new(0, 260, 0, 140)
+mainFrame.Position = UDim2.new(0.5, -130, 0.7, 0)
+mainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+mainFrame.Parent = screenGui
+mainFrame.Active = true
+mainFrame.Draggable = true
+
+-- Rounded corners
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0, 12)
+corner.Parent = mainFrame
+
+-- Title
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, 0, 0, 30)
+title.Text = "Teleport Panel"
+title.BackgroundTransparency = 1
+title.TextColor3 = Color3.fromRGB(255, 255, 255)
+title.TextScaled = true
+title.Font = Enum.Font.GothamBold
+title.Parent = mainFrame
+
+-- Teleport Button
+local tpButton = Instance.new("TextButton")
+tpButton.Size = UDim2.new(0.8, 0, 0, 40)
+tpButton.Position = UDim2.new(0.1, 0, 0.35, 0)
+tpButton.Text = "Teleport"
+tpButton.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+tpButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+tpButton.TextScaled = true
+tpButton.Font = Enum.Font.Gotham
+tpButton.Parent = mainFrame
+
+local tpCorner = Instance.new("UICorner")
+tpCorner.CornerRadius = UDim.new(0, 10)
+tpCorner.Parent = tpButton
+
+-- Toggle Button
+local toggleButton = Instance.new("TextButton")
+toggleButton.Size = UDim2.new(0.8, 0, 0, 30)
+toggleButton.Position = UDim2.new(0.1, 0, 0.7, 0)
+toggleButton.Text = "Loop: OFF"
+toggleButton.BackgroundColor3 = Color3.fromRGB(80, 20, 20)
+toggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+toggleButton.TextScaled = true
+toggleButton.Font = Enum.Font.Gotham
+toggleButton.Parent = mainFrame
+
+local toggleCorner = Instance.new("UICorner")
+toggleCorner.CornerRadius = UDim.new(0, 10)
+toggleCorner.Parent = toggleButton
+
+-- Toggle Logic
+toggleButton.MouseButton1Click:Connect(function()
+	loopEnabled = not loopEnabled
+	
+	if loopEnabled then
+		toggleButton.Text = "Loop: ON"
+		toggleButton.BackgroundColor3 = Color3.fromRGB(20, 120, 20)
+	else
+		toggleButton.Text = "Loop: OFF"
+		toggleButton.BackgroundColor3 = Color3.fromRGB(80, 20, 20)
+	end
+end)
+
+-- Teleport once
+tpButton.MouseButton1Click:Connect(function()
+	if hrp then
+		hrp.CFrame = targetCFrame
+	end
+end)
+
+-- Loop teleport
+task.spawn(function()
+	while true do
+		task.wait(0.1)
+		if loopEnabled and hrp then
+			hrp.CFrame = targetCFrame
+		end
+	end
+end)
