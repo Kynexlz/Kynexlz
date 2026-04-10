@@ -2,7 +2,6 @@ local player = game.Players.LocalPlayer
 local character = player.Character or player.CharacterAdded:Wait()
 local hrp = character:WaitForChild("HumanoidRootPart")
 
--- Target CFrame
 local targetCFrame = CFrame.new(
 	3477.50146, 0.434425354, 24.2043457,
 	0, 0, 1,
@@ -11,90 +10,115 @@ local targetCFrame = CFrame.new(
 )
 
 local loopEnabled = false
+local healthEnabled = false
+
+local remotes = game:GetService("ReplicatedStorage"):WaitForChild("Remotes")
+local mhpRemote = remotes:WaitForChild("MHP")
 
 -- GUI
 local screenGui = Instance.new("ScreenGui")
 screenGui.Parent = player:WaitForChild("PlayerGui")
 
 local mainFrame = Instance.new("Frame")
-mainFrame.Size = UDim2.new(0, 260, 0, 140)
-mainFrame.Position = UDim2.new(0.5, -130, 0.7, 0)
+mainFrame.Size = UDim2.new(0, 280, 0, 190)
+mainFrame.Position = UDim2.new(0.5, -140, 0.7, 0)
 mainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 mainFrame.Parent = screenGui
 mainFrame.Active = true
 mainFrame.Draggable = true
 
--- Rounded corners
-local corner = Instance.new("UICorner")
-corner.CornerRadius = UDim.new(0, 12)
-corner.Parent = mainFrame
+Instance.new("UICorner", mainFrame).CornerRadius = UDim.new(0, 12)
 
 -- Title
 local title = Instance.new("TextLabel")
 title.Size = UDim2.new(1, 0, 0, 30)
-title.Text = "Teleport Panel"
 title.BackgroundTransparency = 1
+title.Text = "+1 HS"
 title.TextColor3 = Color3.fromRGB(255, 255, 255)
-title.TextScaled = true
 title.Font = Enum.Font.GothamBold
+title.TextScaled = true
 title.Parent = mainFrame
 
 -- Teleport Button
 local tpButton = Instance.new("TextButton")
-tpButton.Size = UDim2.new(0.8, 0, 0, 40)
-tpButton.Position = UDim2.new(0.1, 0, 0.35, 0)
+tpButton.Size = UDim2.new(0.85, 0, 0, 35)
+tpButton.Position = UDim2.new(0.075, 0, 0.25, 0)
 tpButton.Text = "Teleport"
-tpButton.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+tpButton.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 tpButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-tpButton.TextScaled = true
 tpButton.Font = Enum.Font.Gotham
+tpButton.TextScaled = true
 tpButton.Parent = mainFrame
+Instance.new("UICorner", tpButton).CornerRadius = UDim.new(0, 10)
 
-local tpCorner = Instance.new("UICorner")
-tpCorner.CornerRadius = UDim.new(0, 10)
-tpCorner.Parent = tpButton
+-- Loop Button
+local loopButton = Instance.new("TextButton")
+loopButton.Size = UDim2.new(0.85, 0, 0, 30)
+loopButton.Position = UDim2.new(0.075, 0, 0.5, 0)
+loopButton.Text = "Loop TP: OFF"
+loopButton.BackgroundColor3 = Color3.fromRGB(80, 20, 20)
+loopButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+loopButton.Font = Enum.Font.Gotham
+loopButton.TextScaled = true
+loopButton.Parent = mainFrame
+Instance.new("UICorner", loopButton).CornerRadius = UDim.new(0, 10)
 
--- Toggle Button
-local toggleButton = Instance.new("TextButton")
-toggleButton.Size = UDim2.new(0.8, 0, 0, 30)
-toggleButton.Position = UDim2.new(0.1, 0, 0.7, 0)
-toggleButton.Text = "Loop: OFF"
-toggleButton.BackgroundColor3 = Color3.fromRGB(80, 20, 20)
-toggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-toggleButton.TextScaled = true
-toggleButton.Font = Enum.Font.Gotham
-toggleButton.Parent = mainFrame
+-- Health Button
+local healthButton = Instance.new("TextButton")
+healthButton.Size = UDim2.new(0.85, 0, 0, 30)
+healthButton.Position = UDim2.new(0.075, 0, 0.72, 0)
+healthButton.Text = "Health: OFF"
+healthButton.BackgroundColor3 = Color3.fromRGB(80, 20, 20)
+healthButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+healthButton.Font = Enum.Font.Gotham
+healthButton.TextScaled = true
+healthButton.Parent = mainFrame
+Instance.new("UICorner", healthButton).CornerRadius = UDim.new(0, 10)
 
-local toggleCorner = Instance.new("UICorner")
-toggleCorner.CornerRadius = UDim.new(0, 10)
-toggleCorner.Parent = toggleButton
-
--- Toggle Logic
-toggleButton.MouseButton1Click:Connect(function()
-	loopEnabled = not loopEnabled
-	
-	if loopEnabled then
-		toggleButton.Text = "Loop: ON"
-		toggleButton.BackgroundColor3 = Color3.fromRGB(20, 120, 20)
-	else
-		toggleButton.Text = "Loop: OFF"
-		toggleButton.BackgroundColor3 = Color3.fromRGB(80, 20, 20)
-	end
-end)
-
--- Teleport once
+-- Teleport
 tpButton.MouseButton1Click:Connect(function()
 	if hrp then
 		hrp.CFrame = targetCFrame
 	end
 end)
 
--- Loop teleport
+-- Loop toggle
+loopButton.MouseButton1Click:Connect(function()
+	loopEnabled = not loopEnabled
+
+	if loopEnabled then
+		loopButton.Text = "Loop TP: ON"
+		loopButton.BackgroundColor3 = Color3.fromRGB(20, 120, 20)
+	else
+		loopButton.Text = "Loop TP: OFF"
+		loopButton.BackgroundColor3 = Color3.fromRGB(80, 20, 20)
+	end
+end)
+
+-- Health toggle
+healthButton.MouseButton1Click:Connect(function()
+	healthEnabled = not healthEnabled
+
+	if healthEnabled then
+		healthButton.Text = "Health: ON"
+		healthButton.BackgroundColor3 = Color3.fromRGB(20, 120, 20)
+	else
+		healthButton.Text = "Health: OFF"
+		healthButton.BackgroundColor3 = Color3.fromRGB(80, 20, 20)
+	end
+end)
+
+-- Loop systems
 task.spawn(function()
 	while true do
 		task.wait(0.1)
+
 		if loopEnabled and hrp then
 			hrp.CFrame = targetCFrame
+		end
+
+		if healthEnabled then
+			mhpRemote:FireServer()
 		end
 	end
 end)
