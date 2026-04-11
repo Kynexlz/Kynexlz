@@ -8,19 +8,29 @@ local UIS = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 
 local player = Players.LocalPlayer
-local char = player.Character or player.CharacterAdded:Wait()
-local hrp = char:WaitForChild("HumanoidRootPart")
-local humanoid = char:WaitForChild("Humanoid")
 
 --// VARIABLES
+local char, hrp, humanoid
 local flying = false
-local speed = 50
+local speed = 60
 local bv, bg
-local keys = {W=false,A=false,S=false,D=false}
+local keys = {W=false,A=false,S=false,D=false,Space=false,Shift=false}
+local animTrack
+
+--// CHARACTER SETUP (FIXED RESPAWN)
+local function setupCharacter(c)
+	char = c
+	hrp = char:WaitForChild("HumanoidRootPart")
+	humanoid = char:WaitForChild("Humanoid")
+end
+
+setupCharacter(player.Character or player.CharacterAdded:Wait())
+player.CharacterAdded:Connect(setupCharacter)
 
 --// GUI
 local gui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
 gui.Name = "FlyGui"
+gui.ResetOnSpawn = false
 
 local frame = Instance.new("Frame", gui)
 frame.Size = UDim2.new(0, 260, 0, 180)
@@ -28,8 +38,7 @@ frame.Position = UDim2.new(0.5, -130, 0.5, -90)
 frame.BackgroundColor3 = Color3.fromRGB(15,15,15)
 frame.Active = true
 frame.Draggable = true
-
-Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 12)
+Instance.new("UICorner", frame)
 
 local title = Instance.new("TextLabel", frame)
 title.Size = UDim2.new(1,0,0,30)
@@ -73,11 +82,6 @@ toggle.TextColor3 = Color3.new(1,1,1)
 toggle.Visible = false
 Instance.new("UICorner", toggle)
 
---// ANIMATION
-local anim = Instance.new("Animation")
-anim.AnimationId = ANIMATION_ID
-local track
-
 --// KEY SYSTEM
 submit.MouseButton1Click:Connect(function()
 	if keyBox.Text == KEY then
@@ -91,34 +95,44 @@ end)
 --// SPEED INPUT
 speedBox.FocusLost:Connect(function()
 	local val = tonumber(speedBox.Text)
-	if val then
-		speed = val
-	end
+	if val then speed = val end
 end)
 
---// FLY FUNCTION
-local function startFly()
-	flying = true
-	
-	bv = Instance.new("BodyVelocity", hrp)
-	bv.MaxForce = Vector3.new(9e9,9e9,9e9)
-	bv.Velocity = Vector3.zero
-	
-	bg = Instance.new("BodyGyro", hrp)
-	bg.MaxTorque = Vector3.new(9e9,9e9,9e9)
-	bg.CFrame = hrp.CFrame
-	
-	track = humanoid:LoadAnimation(anim)
-	track:Play()
+--// ANIMATION
+local function playAnim()
+	local anim = Instance.new("Animation")
+	anim.AnimationId = ANIMATION_ID
+	animTrack = humanoid:LoadAnimation(anim)
+	animTrack:Play()
 end
 
+--// START FLY
+local function startFly()
+	if not hrp then return end
+	
+	flying = true
+	
+	bv = Instance.new("BodyVelocity")
+	bv.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+	bv.Velocity = Vector3.zero
+	bv.Parent = hrp
+	
+	bg = Instance.new("BodyGyro")
+	bg.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
+	bg.P = 10000
+	bg.CFrame = hrp.CFrame
+	bg.Parent = hrp
+	
+	playAnim()
+end
+
+--// STOP FLY
 local function stopFly()
 	flying = false
 	
 	if bv then bv:Destroy() end
 	if bg then bg:Destroy() end
-	
-	if track then track:Stop() end
+	if animTrack then animTrack:Stop() end
 end
 
 --// TOGGLE
@@ -132,12 +146,16 @@ toggle.MouseButton1Click:Connect(function()
 	end
 end)
 
---// CONTROLS (PC + MOBILE SUPPORT)
-UIS.InputBegan:Connect(function(input)
+--// INPUT
+UIS.InputBegan:Connect(function(input, gpe)
+	if gpe then return end
+	
 	if input.KeyCode == Enum.KeyCode.W then keys.W = true end
 	if input.KeyCode == Enum.KeyCode.S then keys.S = true end
 	if input.KeyCode == Enum.KeyCode.A then keys.A = true end
 	if input.KeyCode == Enum.KeyCode.D then keys.D = true end
+	if input.KeyCode == Enum.KeyCode.Space then keys.Space = true end
+	if input.KeyCode == Enum.KeyCode.LeftShift then keys.Shift = true end
 end)
 
 UIS.InputEnded:Connect(function(input)
@@ -145,20 +163,28 @@ UIS.InputEnded:Connect(function(input)
 	if input.KeyCode == Enum.KeyCode.S then keys.S = false end
 	if input.KeyCode == Enum.KeyCode.A then keys.A = false end
 	if input.KeyCode == Enum.KeyCode.D then keys.D = false end
+	if input.KeyCode == Enum.KeyCode.Space then keys.Space = false end
+	if input.KeyCode == Enum.KeyCode.LeftShift then keys.Shift = false end
 end)
 
---// FLY LOOP
+--// MAIN FLY LOOP (FIXED)
 RunService.RenderStepped:Connect(function()
-	if flying and bv and bg then
+	if flying and bv and bg and hrp then
 		local cam = workspace.CurrentCamera
-		local dir = Vector3.zero
+		local moveDir = Vector3.zero
 		
-		if keys.W then dir += cam.CFrame.LookVector end
-		if keys.S then dir -= cam.CFrame.LookVector end
-		if keys.A then dir -= cam.CFrame.RightVector end
-		if keys.D then dir += cam.CFrame.RightVector end
+		if keys.W then moveDir += cam.CFrame.LookVector end
+		if keys.S then moveDir -= cam.CFrame.LookVector end
+		if keys.A then moveDir -= cam.CFrame.RightVector end
+		if keys.D then moveDir += cam.CFrame.RightVector end
+		if keys.Space then moveDir += Vector3.new(0,1,0) end
+		if keys.Shift then moveDir -= Vector3.new(0,1,0) end
 		
-		bv.Velocity = dir * speed
+		if moveDir.Magnitude > 0 then
+			moveDir = moveDir.Unit
+		end
+		
+		bv.Velocity = moveDir * speed
 		bg.CFrame = cam.CFrame
 	end
 end)
