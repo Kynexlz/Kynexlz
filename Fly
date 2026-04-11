@@ -1,3 +1,7 @@
+--// SETTINGS
+local KEY = "Kynexlz"
+local ANIMATION_ID = "rbxassetid://113298527970213"
+
 --// SERVICES
 local Players = game:GetService("Players")
 local UIS = game:GetService("UserInputService")
@@ -5,162 +9,156 @@ local RunService = game:GetService("RunService")
 
 local player = Players.LocalPlayer
 local char = player.Character or player.CharacterAdded:Wait()
-local hum = char:WaitForChild("Humanoid")
-local root = char:WaitForChild("HumanoidRootPart")
+local hrp = char:WaitForChild("HumanoidRootPart")
+local humanoid = char:WaitForChild("Humanoid")
 
 --// VARIABLES
 local flying = false
-local flySpeed = 50
-local bodyGyro, bodyVel
-local animationTrack
+local speed = 50
+local bv, bg
+local keys = {W=false,A=false,S=false,D=false}
 
 --// GUI
-local screenGui = Instance.new("ScreenGui", game.CoreGui)
-screenGui.Name = "FlyGui"
+local gui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
+gui.Name = "FlyGui"
 
-local frame = Instance.new("Frame", screenGui)
-frame.Size = UDim2.new(0, 250, 0, 180)
-frame.Position = UDim2.new(0.05, 0, 0.3, 0)
+local frame = Instance.new("Frame", gui)
+frame.Size = UDim2.new(0, 260, 0, 180)
+frame.Position = UDim2.new(0.5, -130, 0.5, -90)
 frame.BackgroundColor3 = Color3.fromRGB(15,15,15)
 frame.Active = true
 frame.Draggable = true
 
 Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 12)
 
--- TITLE
 local title = Instance.new("TextLabel", frame)
-title.Size = UDim2.new(1,0,0,40)
-title.Text = "FLY SYSTEM"
-title.TextColor3 = Color3.fromRGB(255,255,255)
+title.Size = UDim2.new(1,0,0,30)
+title.Text = "Fly System"
+title.TextColor3 = Color3.new(1,1,1)
 title.BackgroundTransparency = 1
 title.Font = Enum.Font.GothamBold
 title.TextScaled = true
 
--- FLY BUTTON
-local flyBtn = Instance.new("TextButton", frame)
-flyBtn.Size = UDim2.new(0.8,0,0,35)
-flyBtn.Position = UDim2.new(0.1,0,0.3,0)
-flyBtn.Text = "TOGGLE FLY"
-flyBtn.BackgroundColor3 = Color3.fromRGB(25,25,25)
-flyBtn.TextColor3 = Color3.new(1,1,1)
-flyBtn.Font = Enum.Font.GothamBold
-flyBtn.TextScaled = true
-Instance.new("UICorner", flyBtn)
+local keyBox = Instance.new("TextBox", frame)
+keyBox.PlaceholderText = "Enter Key"
+keyBox.Size = UDim2.new(0.8,0,0,30)
+keyBox.Position = UDim2.new(0.1,0,0.25,0)
+keyBox.BackgroundColor3 = Color3.fromRGB(25,25,25)
+keyBox.TextColor3 = Color3.new(1,1,1)
+Instance.new("UICorner", keyBox)
 
--- SPEED SLIDER
-local speedLabel = Instance.new("TextLabel", frame)
-speedLabel.Size = UDim2.new(1,0,0,25)
-speedLabel.Position = UDim2.new(0,0,0.55,0)
-speedLabel.Text = "Speed: 50"
-speedLabel.TextColor3 = Color3.new(1,1,1)
-speedLabel.BackgroundTransparency = 1
-speedLabel.Font = Enum.Font.Gotham
-speedLabel.TextScaled = true
+local submit = Instance.new("TextButton", frame)
+submit.Text = "Unlock"
+submit.Size = UDim2.new(0.8,0,0,30)
+submit.Position = UDim2.new(0.1,0,0.45,0)
+submit.BackgroundColor3 = Color3.fromRGB(40,40,40)
+submit.TextColor3 = Color3.new(1,1,1)
+Instance.new("UICorner", submit)
 
-local slider = Instance.new("TextButton", frame)
-slider.Size = UDim2.new(0.8,0,0,20)
-slider.Position = UDim2.new(0.1,0,0.7,0)
-slider.Text = ""
-slider.BackgroundColor3 = Color3.fromRGB(40,40,40)
-Instance.new("UICorner", slider)
+local speedBox = Instance.new("TextBox", frame)
+speedBox.PlaceholderText = "Fly Speed"
+speedBox.Size = UDim2.new(0.8,0,0,30)
+speedBox.Position = UDim2.new(0.1,0,0.65,0)
+speedBox.BackgroundColor3 = Color3.fromRGB(25,25,25)
+speedBox.TextColor3 = Color3.new(1,1,1)
+speedBox.Visible = false
+Instance.new("UICorner", speedBox)
 
--- MOBILE CONTROL BUTTONS
-local upBtn = Instance.new("TextButton", frame)
-upBtn.Size = UDim2.new(0.35,0,0,30)
-upBtn.Position = UDim2.new(0.1,0,0.85,0)
-upBtn.Text = "UP"
-upBtn.BackgroundColor3 = Color3.fromRGB(25,25,25)
-upBtn.TextColor3 = Color3.new(1,1,1)
-Instance.new("UICorner", upBtn)
-
-local downBtn = Instance.new("TextButton", frame)
-downBtn.Size = UDim2.new(0.35,0,0,30)
-downBtn.Position = UDim2.new(0.55,0,0.85,0)
-downBtn.Text = "DOWN"
-downBtn.BackgroundColor3 = Color3.fromRGB(25,25,25)
-downBtn.TextColor3 = Color3.new(1,1,1)
-Instance.new("UICorner", downBtn)
+local toggle = Instance.new("TextButton", frame)
+toggle.Text = "Fly: OFF"
+toggle.Size = UDim2.new(0.8,0,0,30)
+toggle.Position = UDim2.new(0.1,0,0.82,0)
+toggle.BackgroundColor3 = Color3.fromRGB(40,40,40)
+toggle.TextColor3 = Color3.new(1,1,1)
+toggle.Visible = false
+Instance.new("UICorner", toggle)
 
 --// ANIMATION
 local anim = Instance.new("Animation")
-anim.AnimationId = "rbxassetid://113298527970213"
+anim.AnimationId = ANIMATION_ID
+local track
 
---// FUNCTIONS
+--// KEY SYSTEM
+submit.MouseButton1Click:Connect(function()
+	if keyBox.Text == KEY then
+		keyBox.Visible = false
+		submit.Visible = false
+		speedBox.Visible = true
+		toggle.Visible = true
+	end
+end)
+
+--// SPEED INPUT
+speedBox.FocusLost:Connect(function()
+	local val = tonumber(speedBox.Text)
+	if val then
+		speed = val
+	end
+end)
+
+--// FLY FUNCTION
 local function startFly()
-	if flying then return end
 	flying = true
 	
-	bodyGyro = Instance.new("BodyGyro", root)
-	bodyGyro.P = 9e4
-	bodyGyro.maxTorque = Vector3.new(9e9,9e9,9e9)
-	bodyGyro.cframe = root.CFrame
-
-	bodyVel = Instance.new("BodyVelocity", root)
-	bodyVel.velocity = Vector3.new(0,0,0)
-	bodyVel.maxForce = Vector3.new(9e9,9e9,9e9)
-
-	-- Animation
-	animationTrack = hum:LoadAnimation(anim)
-	animationTrack:Play()
-
-	-- INVINCIBLE FEEL
-	hum:SetStateEnabled(Enum.HumanoidStateType.FallingDown, false)
-	hum:SetStateEnabled(Enum.HumanoidStateType.Ragdoll, false)
-
-	RunService.RenderStepped:Connect(function()
-		if flying then
-			local cam = workspace.CurrentCamera
-			local moveDir = hum.MoveDirection
-			
-			bodyVel.velocity = (cam.CFrame.LookVector * moveDir.Z + cam.CFrame.RightVector * moveDir.X) * flySpeed
-			bodyGyro.cframe = cam.CFrame
-		end
-	end)
+	bv = Instance.new("BodyVelocity", hrp)
+	bv.MaxForce = Vector3.new(9e9,9e9,9e9)
+	bv.Velocity = Vector3.zero
+	
+	bg = Instance.new("BodyGyro", hrp)
+	bg.MaxTorque = Vector3.new(9e9,9e9,9e9)
+	bg.CFrame = hrp.CFrame
+	
+	track = humanoid:LoadAnimation(anim)
+	track:Play()
 end
 
 local function stopFly()
 	flying = false
 	
-	if bodyGyro then bodyGyro:Destroy() end
-	if bodyVel then bodyVel:Destroy() end
-	if animationTrack then animationTrack:Stop() end
-
-	hum:SetStateEnabled(Enum.HumanoidStateType.FallingDown, true)
-	hum:SetStateEnabled(Enum.HumanoidStateType.Ragdoll, true)
+	if bv then bv:Destroy() end
+	if bg then bg:Destroy() end
+	
+	if track then track:Stop() end
 end
 
---// BUTTONS
-flyBtn.MouseButton1Click:Connect(function()
+--// TOGGLE
+toggle.MouseButton1Click:Connect(function()
 	if flying then
 		stopFly()
+		toggle.Text = "Fly: OFF"
 	else
 		startFly()
+		toggle.Text = "Fly: ON"
 	end
 end)
 
--- SPEED SLIDER (simple tap = increase)
-slider.MouseButton1Click:Connect(function()
-	flySpeed = flySpeed + 20
-	if flySpeed > 200 then flySpeed = 20 end
-	speedLabel.Text = "Speed: "..flySpeed
+--// CONTROLS (PC + MOBILE SUPPORT)
+UIS.InputBegan:Connect(function(input)
+	if input.KeyCode == Enum.KeyCode.W then keys.W = true end
+	if input.KeyCode == Enum.KeyCode.S then keys.S = true end
+	if input.KeyCode == Enum.KeyCode.A then keys.A = true end
+	if input.KeyCode == Enum.KeyCode.D then keys.D = true end
 end)
 
--- MOBILE UP/DOWN
-local up = false
-local down = false
+UIS.InputEnded:Connect(function(input)
+	if input.KeyCode == Enum.KeyCode.W then keys.W = false end
+	if input.KeyCode == Enum.KeyCode.S then keys.S = false end
+	if input.KeyCode == Enum.KeyCode.A then keys.A = false end
+	if input.KeyCode == Enum.KeyCode.D then keys.D = false end
+end)
 
-upBtn.MouseButton1Down:Connect(function() up = true end)
-upBtn.MouseButton1Up:Connect(function() up = false end)
-
-downBtn.MouseButton1Down:Connect(function() down = true end)
-downBtn.MouseButton1Up:Connect(function() down = false end)
-
+--// FLY LOOP
 RunService.RenderStepped:Connect(function()
-	if flying and bodyVel then
-		if up then
-			bodyVel.velocity = bodyVel.velocity + Vector3.new(0, flySpeed, 0)
-		elseif down then
-			bodyVel.velocity = bodyVel.velocity - Vector3.new(0, flySpeed, 0)
-		end
+	if flying and bv and bg then
+		local cam = workspace.CurrentCamera
+		local dir = Vector3.zero
+		
+		if keys.W then dir += cam.CFrame.LookVector end
+		if keys.S then dir -= cam.CFrame.LookVector end
+		if keys.A then dir -= cam.CFrame.RightVector end
+		if keys.D then dir += cam.CFrame.RightVector end
+		
+		bv.Velocity = dir * speed
+		bg.CFrame = cam.CFrame
 	end
 end)
