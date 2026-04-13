@@ -1,0 +1,213 @@
+--// SERVICES
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local UIS = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+
+local player = Players.LocalPlayer
+
+--// KEY
+local KEY = "Kynexlz"
+
+--// GUI ROOT
+local gui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
+gui.Name = "KynexUltra"
+gui.ResetOnSpawn = false
+
+--// BACKGROUND DIM (FAKE BLUR)
+local Dim = Instance.new("Frame", gui)
+Dim.Size = UDim2.new(1,0,1,0)
+Dim.BackgroundColor3 = Color3.new(0,0,0)
+Dim.BackgroundTransparency = 1
+Dim.Visible = false
+
+--// TOGGLE BUTTON
+local Toggle = Instance.new("TextButton", gui)
+Toggle.Size = UDim2.new(0, 55, 0, 55)
+Toggle.Position = UDim2.new(1, -70, 0.5, -30)
+Toggle.Text = "+"
+Toggle.TextScaled = true
+Toggle.BackgroundColor3 = Color3.fromRGB(20,20,20)
+Toggle.TextColor3 = Color3.new(1,1,1)
+Toggle.Active = true
+Toggle.Draggable = true
+Instance.new("UICorner", Toggle)
+
+local glow = Instance.new("UIStroke", Toggle)
+glow.Color = Color3.fromRGB(0,170,255)
+glow.Thickness = 2
+
+--// MAIN PANEL
+local Main = Instance.new("Frame", gui)
+Main.Size = UDim2.new(0, 340, 0, 300)
+Main.Position = UDim2.new(0.5, -170, 1.2, 0)
+Main.BackgroundColor3 = Color3.fromRGB(18,18,18)
+Main.Visible = false
+Main.Active = true
+Main.Draggable = true
+Instance.new("UICorner", Main)
+
+-- Gradient Accent
+local grad = Instance.new("UIGradient", Main)
+grad.Color = ColorSequence.new{
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(0,170,255)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(140,0,255))
+}
+grad.Rotation = 90
+
+local inner = Instance.new("Frame", Main)
+inner.Size = UDim2.new(1, -4, 1, -4)
+inner.Position = UDim2.new(0,2,0,2)
+inner.BackgroundColor3 = Color3.fromRGB(18,18,18)
+Instance.new("UICorner", inner)
+
+-- Layout
+local layout = Instance.new("UIListLayout", inner)
+layout.Padding = UDim.new(0,10)
+
+-- Title
+local Title = Instance.new("TextLabel", inner)
+Title.Size = UDim2.new(1,0,0,40)
+Title.Text = "Kynex Ultra"
+Title.TextScaled = true
+Title.BackgroundTransparency = 1
+Title.TextColor3 = Color3.new(1,1,1)
+
+-- Input creator
+local function createInput(text)
+	local box = Instance.new("TextBox", inner)
+	box.Size = UDim2.new(1, -20, 0, 40)
+	box.PlaceholderText = text
+	box.Text = ""
+	box.BackgroundColor3 = Color3.fromRGB(30,30,30)
+	box.TextColor3 = Color3.new(1,1,1)
+	box.ClearTextOnFocus = false
+	Instance.new("UICorner", box)
+	return box
+end
+
+local WSBox = createInput("WalkSpeed")
+local JPBox = createInput("JumpPower")
+
+-- Modern toggle button
+local function createToggle(name)
+	local btn = Instance.new("TextButton", inner)
+	btn.Size = UDim2.new(1, -20, 0, 40)
+	btn.Text = name .. ": OFF"
+	btn.BackgroundColor3 = Color3.fromRGB(35,35,35)
+	btn.TextColor3 = Color3.new(1,1,1)
+	Instance.new("UICorner", btn)
+	return btn
+end
+
+local ApplyWS = createToggle("Apply WalkSpeed")
+local ApplyJP = createToggle("Apply JumpPower")
+local InfJumpBtn = createToggle("Infinite Jump")
+local NoclipBtn = createToggle("Noclip")
+
+-- KEY UI
+local KeyFrame = Instance.new("Frame", gui)
+KeyFrame.Size = UDim2.new(0, 300, 0, 160)
+KeyFrame.Position = UDim2.new(0.5, -150, 0.5, -80)
+KeyFrame.BackgroundColor3 = Color3.fromRGB(20,20,20)
+Instance.new("UICorner", KeyFrame)
+
+local KeyBox = createInput("Enter Key")
+KeyBox.Parent = KeyFrame
+KeyBox.Position = UDim2.new(0.1,0,0.3,0)
+
+local Submit = Instance.new("TextButton", KeyFrame)
+Submit.Size = UDim2.new(0.6,0,0,40)
+Submit.Position = UDim2.new(0.2,0,0.65,0)
+Submit.Text = "Unlock"
+Submit.BackgroundColor3 = Color3.fromRGB(0,170,255)
+Submit.TextColor3 = Color3.new(1,1,1)
+Instance.new("UICorner", Submit)
+
+-- LOGIC
+local infJump = false
+local noclip = false
+local open = false
+
+ApplyWS.MouseButton1Click:Connect(function()
+	local n = tonumber(WSBox.Text)
+	if n and player.Character then
+		player.Character:FindFirstChildOfClass("Humanoid").WalkSpeed = n
+	end
+end)
+
+ApplyJP.MouseButton1Click:Connect(function()
+	local n = tonumber(JPBox.Text)
+	if n and player.Character then
+		player.Character:FindFirstChildOfClass("Humanoid").JumpPower = n
+	end
+end)
+
+UIS.JumpRequest:Connect(function()
+	if infJump and player.Character then
+		player.Character:FindFirstChildOfClass("Humanoid"):ChangeState("Jumping")
+	end
+end)
+
+InfJumpBtn.MouseButton1Click:Connect(function()
+	infJump = not infJump
+	InfJumpBtn.Text = "Infinite Jump: " .. (infJump and "ON" or "OFF")
+end)
+
+RunService.Stepped:Connect(function()
+	if noclip and player.Character then
+		for _,v in pairs(player.Character:GetDescendants()) do
+			if v:IsA("BasePart") then
+				v.CanCollide = false
+			end
+		end
+	end
+end)
+
+NoclipBtn.MouseButton1Click:Connect(function()
+	noclip = not noclip
+	NoclipBtn.Text = "Noclip: " .. (noclip and "ON" or "OFF")
+end)
+
+-- KEY SYSTEM
+Submit.MouseButton1Click:Connect(function()
+	if KeyBox.Text == KEY then
+		KeyFrame.Visible = false
+		Main.Visible = true
+	else
+		KeyBox.Text = "Wrong Key"
+	end
+end)
+
+-- ANIMATION
+local function openUI()
+	Main.Visible = true
+	Dim.Visible = true
+	
+	TweenService:Create(Dim, TweenInfo.new(0.3), {BackgroundTransparency = 0.4}):Play()
+	TweenService:Create(Main, TweenInfo.new(0.4, Enum.EasingStyle.Quad), {
+		Position = UDim2.new(0.5, -170, 0.5, -150)
+	}):Play()
+end
+
+local function closeUI()
+	TweenService:Create(Dim, TweenInfo.new(0.3), {BackgroundTransparency = 1}):Play()
+	local tween = TweenService:Create(Main, TweenInfo.new(0.4), {
+		Position = UDim2.new(0.5, -170, 1.2, 0)
+	})
+	tween:Play()
+	tween.Completed:Wait()
+	Main.Visible = false
+	Dim.Visible = false
+end
+
+Toggle.MouseButton1Click:Connect(function()
+	if not Main.Visible then return end
+	
+	open = not open
+	if open then
+		openUI()
+	else
+		closeUI()
+	end
+end)
