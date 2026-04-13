@@ -1,91 +1,84 @@
---// SERVICES
-local Players = game:GetService("Players")
-local TweenService = game:GetService("TweenService")
-local UIS = game:GetService("UserInputService")
-local RunService = game:GetService("RunService")
+--// KEY SYSTEM
+local correctKey = "Kynexlz"
+local player = game.Players.LocalPlayer
 
-local player = Players.LocalPlayer
+-- GUI Setup
+local ScreenGui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
+ScreenGui.Name = "KynexHub"
 
---// KEY
-local KEY = "Kynexlz"
-
---// GUI
-local gui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
-gui.Name = "KynexHub"
-gui.ResetOnSpawn = false
-
---// TOGGLE BUTTON (OPEN/CLOSE)
-local Toggle = Instance.new("TextButton", gui)
-Toggle.Size = UDim2.new(0, 50, 0, 50)
-Toggle.Position = UDim2.new(1, -60, 0.5, -25)
-Toggle.Text = "≡"
-Toggle.BackgroundColor3 = Color3.fromRGB(25,25,25)
-Toggle.TextColor3 = Color3.new(1,1,1)
-Toggle.AutoButtonColor = false
-Toggle.Active = true
-Toggle.Draggable = true
-Instance.new("UICorner", Toggle)
-
---// MAIN FRAME
-local Main = Instance.new("Frame", gui)
-Main.Size = UDim2.new(0, 320, 0, 260)
-Main.Position = UDim2.new(1, 20, 0.5, -130) -- start off screen
-Main.BackgroundColor3 = Color3.fromRGB(15,15,15)
-Main.Visible = false
-Main.Active = true
-Main.Draggable = true
-Instance.new("UICorner", Main)
-
-local UIList = Instance.new("UIListLayout", Main)
-UIList.Padding = UDim.new(0, 8)
-
---// KEY FRAME
-local KeyFrame = Instance.new("Frame", gui)
+-- Key Frame
+local KeyFrame = Instance.new("Frame", ScreenGui)
 KeyFrame.Size = UDim2.new(0, 300, 0, 150)
 KeyFrame.Position = UDim2.new(0.5, -150, 0.5, -75)
 KeyFrame.BackgroundColor3 = Color3.fromRGB(20,20,20)
 KeyFrame.Active = true
 KeyFrame.Draggable = true
+
 Instance.new("UICorner", KeyFrame)
 
 local KeyBox = Instance.new("TextBox", KeyFrame)
 KeyBox.Size = UDim2.new(0.8, 0, 0, 40)
 KeyBox.Position = UDim2.new(0.1, 0, 0.3, 0)
 KeyBox.PlaceholderText = "Enter Key..."
+KeyBox.Text = ""
 KeyBox.BackgroundColor3 = Color3.fromRGB(30,30,30)
 KeyBox.TextColor3 = Color3.new(1,1,1)
+
 Instance.new("UICorner", KeyBox)
 
 local Submit = Instance.new("TextButton", KeyFrame)
 Submit.Size = UDim2.new(0.5, 0, 0, 35)
 Submit.Position = UDim2.new(0.25, 0, 0.65, 0)
-Submit.Text = "Unlock"
+Submit.Text = "Submit"
 Submit.BackgroundColor3 = Color3.fromRGB(40,40,40)
 Submit.TextColor3 = Color3.new(1,1,1)
+
 Instance.new("UICorner", Submit)
 
---// TITLE
+-- Main GUI (hidden first)
+local Main = Instance.new("Frame", ScreenGui)
+Main.Size = UDim2.new(0, 350, 0, 260)
+Main.Position = UDim2.new(0.5, -175, 0.5, -130)
+Main.BackgroundColor3 = Color3.fromRGB(15,15,15)
+Main.Visible = false
+Main.Active = true
+Main.Draggable = true
+
+Instance.new("UICorner", Main)
+
+local UIList = Instance.new("UIListLayout", Main)
+UIList.Padding = UDim.new(0, 8)
+
+-- Title
 local Title = Instance.new("TextLabel", Main)
 Title.Size = UDim2.new(1, 0, 0, 30)
 Title.Text = "Kynex Hub"
 Title.BackgroundTransparency = 1
 Title.TextColor3 = Color3.new(1,1,1)
 
---// INPUTS
-local function makeBox(placeholder)
-	local box = Instance.new("TextBox", Main)
-	box.Size = UDim2.new(1, -20, 0, 35)
-	box.PlaceholderText = placeholder
-	box.BackgroundColor3 = Color3.fromRGB(25,25,25)
-	box.TextColor3 = Color3.new(1,1,1)
-	Instance.new("UICorner", box)
-	return box
-end
+-- WalkSpeed Input
+local WSBox = Instance.new("TextBox", Main)
+WSBox.Size = UDim2.new(1, -20, 0, 35)
+WSBox.Text = ""
+WSBox.PlaceholderText = "WalkSpeed"
+WSBox.BackgroundColor3 = Color3.fromRGB(25,25,25)
+WSBox.TextColor3 = Color3.new(1,1,1)
+WSBox.Parent = Main
 
-local WSBox = makeBox("WalkSpeed")
-local JPBox = makeBox("JumpPower")
+Instance.new("UICorner", WSBox)
 
---// BUTTONS
+-- JumpPower Input
+local JPBox = Instance.new("TextBox", Main)
+JPBox.Size = UDim2.new(1, -20, 0, 35)
+JPBox.Text = ""
+JPBox.PlaceholderText = "JumpPower"
+JPBox.BackgroundColor3 = Color3.fromRGB(25,25,25)
+JPBox.TextColor3 = Color3.new(1,1,1)
+JPBox.Parent = Main
+
+Instance.new("UICorner", JPBox)
+
+-- Buttons
 local function makeButton(text)
 	local btn = Instance.new("TextButton", Main)
 	btn.Size = UDim2.new(1, -20, 0, 35)
@@ -98,43 +91,42 @@ end
 
 local ApplyWS = makeButton("Apply WalkSpeed")
 local ApplyJP = makeButton("Apply JumpPower")
-local InfJumpBtn = makeButton("Infinite Jump: OFF")
-local NoclipBtn = makeButton("Noclip: OFF")
+local InfJump = makeButton("Infinite Jump: OFF")
+local Noclip = makeButton("Noclip: OFF")
 
---// LOGIC
-local infJump = false
-local noclip = false
-local opened = false
+-- Logic
+local infJumpEnabled = false
+local noclipEnabled = false
 
 ApplyWS.MouseButton1Click:Connect(function()
-	local n = tonumber(WSBox.Text)
-	if n and player.Character then
-		player.Character:FindFirstChildOfClass("Humanoid").WalkSpeed = n
+	local num = tonumber(WSBox.Text)
+	if num then
+		player.Character.Humanoid.WalkSpeed = num
 	end
 end)
 
 ApplyJP.MouseButton1Click:Connect(function()
-	local n = tonumber(JPBox.Text)
-	if n and player.Character then
-		player.Character:FindFirstChildOfClass("Humanoid").JumpPower = n
+	local num = tonumber(JPBox.Text)
+	if num then
+		player.Character.Humanoid.JumpPower = num
 	end
 end)
 
 -- Infinite Jump
-UIS.JumpRequest:Connect(function()
-	if infJump and player.Character then
+game:GetService("UserInputService").JumpRequest:Connect(function()
+	if infJumpEnabled then
 		player.Character:FindFirstChildOfClass("Humanoid"):ChangeState("Jumping")
 	end
 end)
 
-InfJumpBtn.MouseButton1Click:Connect(function()
-	infJump = not infJump
-	InfJumpBtn.Text = "Infinite Jump: " .. (infJump and "ON" or "OFF")
+InfJump.MouseButton1Click:Connect(function()
+	infJumpEnabled = not infJumpEnabled
+	InfJump.Text = "Infinite Jump: " .. (infJumpEnabled and "ON" or "OFF")
 end)
 
 -- Noclip
-RunService.Stepped:Connect(function()
-	if noclip and player.Character then
+game:GetService("RunService").Stepped:Connect(function()
+	if noclipEnabled and player.Character then
 		for _, v in pairs(player.Character:GetDescendants()) do
 			if v:IsA("BasePart") then
 				v.CanCollide = false
@@ -143,40 +135,17 @@ RunService.Stepped:Connect(function()
 	end
 end)
 
-NoclipBtn.MouseButton1Click:Connect(function()
-	noclip = not noclip
-	NoclipBtn.Text = "Noclip: " .. (noclip and "ON" or "OFF")
+Noclip.MouseButton1Click:Connect(function()
+	noclipEnabled = not noclipEnabled
+	Noclip.Text = "Noclip: " .. (noclipEnabled and "ON" or "OFF")
 end)
 
---// KEY SYSTEM
+-- Key Check
 Submit.MouseButton1Click:Connect(function()
-	if KeyBox.Text == KEY then
+	if KeyBox.Text == correctKey then
 		KeyFrame.Visible = false
 		Main.Visible = true
 	else
 		KeyBox.Text = "Wrong Key"
-	end
-end)
-
---// ANIMATION
-local openPos = UDim2.new(1, -340, 0.5, -130)
-local closedPos = UDim2.new(1, 20, 0.5, -130)
-
-local tweenInfo = TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-
-Toggle.MouseButton1Click:Connect(function()
-	if not Main.Visible then return end
-	
-	opened = not opened
-	
-	if opened then
-		local tween = TweenService:Create(Main, tweenInfo, {Position = openPos})
-		Main.Visible = true
-		tween:Play()
-	else
-		local tween = TweenService:Create(Main, tweenInfo, {Position = closedPos})
-		tween:Play()
-		tween.Completed:Wait()
-		Main.Visible = false
 	end
 end)
