@@ -9,134 +9,160 @@ local player = Players.LocalPlayer
 --// KEY
 local KEY = "Kynexlz"
 
---// GUI ROOT
+--// GUI
 local gui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
-gui.Name = "KynexUltra"
+gui.Name = "KynexHub"
 gui.ResetOnSpawn = false
 
---// BACKGROUND DIM (FAKE BLUR)
-local Dim = Instance.new("Frame", gui)
-Dim.Size = UDim2.new(1,0,1,0)
-Dim.BackgroundColor3 = Color3.new(0,0,0)
-Dim.BackgroundTransparency = 1
-Dim.Visible = false
+-- MOBILE SCALE
+local scale = Instance.new("UIScale", gui)
+scale.Scale = 1
+
+--// UI FUNCTIONS
+local function styleFrame(obj)
+	obj.BackgroundColor3 = Color3.fromRGB(10,10,10)
+	local stroke = Instance.new("UIStroke", obj)
+	stroke.Color = Color3.fromRGB(255,255,255)
+	stroke.Thickness = 1
+	Instance.new("UICorner", obj).CornerRadius = UDim.new(0,10)
+end
+
+local function styleButton(btn)
+	btn.BackgroundColor3 = Color3.fromRGB(15,15,15)
+	btn.TextColor3 = Color3.new(1,1,1)
+	btn.AutoButtonColor = false
+	
+	local stroke = Instance.new("UIStroke", btn)
+	stroke.Color = Color3.fromRGB(255,255,255)
+
+	Instance.new("UICorner", btn).CornerRadius = UDim.new(0,8)
+
+	-- Hover animation
+	btn.MouseEnter:Connect(function()
+		TweenService:Create(btn, TweenInfo.new(0.15), {
+			BackgroundColor3 = Color3.fromRGB(30,30,30)
+		}):Play()
+	end)
+
+	btn.MouseLeave:Connect(function()
+		TweenService:Create(btn, TweenInfo.new(0.15), {
+			BackgroundColor3 = Color3.fromRGB(15,15,15)
+		}):Play()
+	end)
+end
+
+local function styleBox(box)
+	box.BackgroundColor3 = Color3.fromRGB(15,15,15)
+	box.TextColor3 = Color3.new(1,1,1)
+	box.PlaceholderColor3 = Color3.fromRGB(180,180,180)
+
+	local stroke = Instance.new("UIStroke", box)
+	stroke.Color = Color3.fromRGB(255,255,255)
+
+	Instance.new("UICorner", box).CornerRadius = UDim.new(0,8)
+end
 
 --// TOGGLE BUTTON
 local Toggle = Instance.new("TextButton", gui)
-Toggle.Size = UDim2.new(0, 55, 0, 55)
-Toggle.Position = UDim2.new(1, -70, 0.5, -30)
-Toggle.Text = "+"
-Toggle.TextScaled = true
-Toggle.BackgroundColor3 = Color3.fromRGB(20,20,20)
-Toggle.TextColor3 = Color3.new(1,1,1)
-Toggle.Active = true
+Toggle.Size = UDim2.new(0,50,0,50)
+Toggle.Position = UDim2.new(1,-65,0.5,-25)
+Toggle.Text = "≡"
+styleButton(Toggle)
 Toggle.Draggable = true
-Instance.new("UICorner", Toggle)
 
-local glow = Instance.new("UIStroke", Toggle)
-glow.Color = Color3.fromRGB(0,170,255)
-glow.Thickness = 2
-
---// MAIN PANEL
+--// MAIN FRAME
 local Main = Instance.new("Frame", gui)
-Main.Size = UDim2.new(0, 340, 0, 300)
-Main.Position = UDim2.new(0.5, -170, 1.2, 0)
-Main.BackgroundColor3 = Color3.fromRGB(18,18,18)
+Main.Size = UDim2.new(0,320,0,300)
+Main.Position = UDim2.new(1,30,0.5,-150)
 Main.Visible = false
 Main.Active = true
 Main.Draggable = true
-Instance.new("UICorner", Main)
+styleFrame(Main)
 
--- Gradient Accent
-local grad = Instance.new("UIGradient", Main)
-grad.Color = ColorSequence.new{
-	ColorSequenceKeypoint.new(0, Color3.fromRGB(0,170,255)),
-	ColorSequenceKeypoint.new(1, Color3.fromRGB(140,0,255))
-}
-grad.Rotation = 90
+local padding = Instance.new("UIPadding", Main)
+padding.PaddingLeft = UDim.new(0,10)
+padding.PaddingRight = UDim.new(0,10)
+padding.PaddingTop = UDim.new(0,10)
 
-local inner = Instance.new("Frame", Main)
-inner.Size = UDim2.new(1, -4, 1, -4)
-inner.Position = UDim2.new(0,2,0,2)
-inner.BackgroundColor3 = Color3.fromRGB(18,18,18)
-Instance.new("UICorner", inner)
+local layout = Instance.new("UIListLayout", Main)
+layout.Padding = UDim.new(0,8)
 
--- Layout
-local layout = Instance.new("UIListLayout", inner)
-layout.Padding = UDim.new(0,10)
-
--- Title
-local Title = Instance.new("TextLabel", inner)
-Title.Size = UDim2.new(1,0,0,40)
-Title.Text = "Kynex Ultra"
-Title.TextScaled = true
+-- TITLE
+local Title = Instance.new("TextLabel", Main)
+Title.Text = "Kynex Hub"
+Title.Size = UDim2.new(1,0,0,30)
 Title.BackgroundTransparency = 1
 Title.TextColor3 = Color3.new(1,1,1)
+Title.TextScaled = true
 
--- Input creator
-local function createInput(text)
-	local box = Instance.new("TextBox", inner)
-	box.Size = UDim2.new(1, -20, 0, 40)
+-- INPUTS
+local function makeBox(text)
+	local box = Instance.new("TextBox", Main)
+	box.Size = UDim2.new(1,0,0,35)
 	box.PlaceholderText = text
-	box.Text = ""
-	box.BackgroundColor3 = Color3.fromRGB(30,30,30)
-	box.TextColor3 = Color3.new(1,1,1)
-	box.ClearTextOnFocus = false
-	Instance.new("UICorner", box)
+	styleBox(box)
 	return box
 end
 
-local WSBox = createInput("WalkSpeed")
-local JPBox = createInput("JumpPower")
+local WSBox = makeBox("WalkSpeed")
+local JPBox = makeBox("JumpPower")
 
--- Modern toggle button
-local function createToggle(name)
-	local btn = Instance.new("TextButton", inner)
-	btn.Size = UDim2.new(1, -20, 0, 40)
-	btn.Text = name .. ": OFF"
-	btn.BackgroundColor3 = Color3.fromRGB(35,35,35)
-	btn.TextColor3 = Color3.new(1,1,1)
-	Instance.new("UICorner", btn)
+-- BUTTONS
+local function makeButton(text)
+	local btn = Instance.new("TextButton", Main)
+	btn.Size = UDim2.new(1,0,0,35)
+	btn.Text = text
+	styleButton(btn)
 	return btn
 end
 
-local ApplyWS = createToggle("Apply WalkSpeed")
-local ApplyJP = createToggle("Apply JumpPower")
-local InfJumpBtn = createToggle("Infinite Jump")
-local NoclipBtn = createToggle("Noclip")
+local WSBtn = makeButton("Apply WalkSpeed")
+local JPBtn = makeButton("Apply JumpPower")
+local InfBtn = makeButton("Infinite Jump: OFF")
+local NoclipBtn = makeButton("Noclip: OFF")
 
--- KEY UI
+--// KEY FRAME
 local KeyFrame = Instance.new("Frame", gui)
-KeyFrame.Size = UDim2.new(0, 300, 0, 160)
-KeyFrame.Position = UDim2.new(0.5, -150, 0.5, -80)
-KeyFrame.BackgroundColor3 = Color3.fromRGB(20,20,20)
-Instance.new("UICorner", KeyFrame)
+KeyFrame.Size = UDim2.new(0,280,0,180)
+KeyFrame.Position = UDim2.new(0.5,-140,0.5,-90)
+KeyFrame.Active = true
+KeyFrame.Draggable = true
+styleFrame(KeyFrame)
 
-local KeyBox = createInput("Enter Key")
+local keyPad = Instance.new("UIPadding", KeyFrame)
+keyPad.PaddingTop = UDim.new(0,10)
+keyPad.PaddingLeft = UDim.new(0,10)
+keyPad.PaddingRight = UDim.new(0,10)
+
+local keyLayout = Instance.new("UIListLayout", KeyFrame)
+keyLayout.Padding = UDim.new(0,10)
+
+local KeyTitle = Instance.new("TextLabel", KeyFrame)
+KeyTitle.Text = "Key System"
+KeyTitle.Size = UDim2.new(1,0,0,30)
+KeyTitle.BackgroundTransparency = 1
+KeyTitle.TextScaled = true
+KeyTitle.TextColor3 = Color3.new(1,1,1)
+
+local KeyBox = makeBox("Enter Key")
 KeyBox.Parent = KeyFrame
-KeyBox.Position = UDim2.new(0.1,0,0.3,0)
 
-local Submit = Instance.new("TextButton", KeyFrame)
-Submit.Size = UDim2.new(0.6,0,0,40)
-Submit.Position = UDim2.new(0.2,0,0.65,0)
-Submit.Text = "Unlock"
-Submit.BackgroundColor3 = Color3.fromRGB(0,170,255)
-Submit.TextColor3 = Color3.new(1,1,1)
-Instance.new("UICorner", Submit)
+local Submit = makeButton("Unlock")
+Submit.Parent = KeyFrame
 
--- LOGIC
-local infJump = false
+--// LOGIC
+local inf = false
 local noclip = false
-local open = false
+local opened = false
 
-ApplyWS.MouseButton1Click:Connect(function()
+WSBtn.MouseButton1Click:Connect(function()
 	local n = tonumber(WSBox.Text)
 	if n and player.Character then
 		player.Character:FindFirstChildOfClass("Humanoid").WalkSpeed = n
 	end
 end)
 
-ApplyJP.MouseButton1Click:Connect(function()
+JPBtn.MouseButton1Click:Connect(function()
 	local n = tonumber(JPBox.Text)
 	if n and player.Character then
 		player.Character:FindFirstChildOfClass("Humanoid").JumpPower = n
@@ -144,14 +170,14 @@ ApplyJP.MouseButton1Click:Connect(function()
 end)
 
 UIS.JumpRequest:Connect(function()
-	if infJump and player.Character then
+	if inf and player.Character then
 		player.Character:FindFirstChildOfClass("Humanoid"):ChangeState("Jumping")
 	end
 end)
 
-InfJumpBtn.MouseButton1Click:Connect(function()
-	infJump = not infJump
-	InfJumpBtn.Text = "Infinite Jump: " .. (infJump and "ON" or "OFF")
+InfBtn.MouseButton1Click:Connect(function()
+	inf = not inf
+	InfBtn.Text = "Infinite Jump: "..(inf and "ON" or "OFF")
 end)
 
 RunService.Stepped:Connect(function()
@@ -166,10 +192,10 @@ end)
 
 NoclipBtn.MouseButton1Click:Connect(function()
 	noclip = not noclip
-	NoclipBtn.Text = "Noclip: " .. (noclip and "ON" or "OFF")
+	NoclipBtn.Text = "Noclip: "..(noclip and "ON" or "OFF")
 end)
 
--- KEY SYSTEM
+-- KEY
 Submit.MouseButton1Click:Connect(function()
 	if KeyBox.Text == KEY then
 		KeyFrame.Visible = false
@@ -180,34 +206,19 @@ Submit.MouseButton1Click:Connect(function()
 end)
 
 -- ANIMATION
-local function openUI()
-	Main.Visible = true
-	Dim.Visible = true
-	
-	TweenService:Create(Dim, TweenInfo.new(0.3), {BackgroundTransparency = 0.4}):Play()
-	TweenService:Create(Main, TweenInfo.new(0.4, Enum.EasingStyle.Quad), {
-		Position = UDim2.new(0.5, -170, 0.5, -150)
-	}):Play()
-end
-
-local function closeUI()
-	TweenService:Create(Dim, TweenInfo.new(0.3), {BackgroundTransparency = 1}):Play()
-	local tween = TweenService:Create(Main, TweenInfo.new(0.4), {
-		Position = UDim2.new(0.5, -170, 1.2, 0)
-	})
-	tween:Play()
-	tween.Completed:Wait()
-	Main.Visible = false
-	Dim.Visible = false
-end
+local openPos = UDim2.new(1,-340,0.5,-150)
+local closePos = UDim2.new(1,30,0.5,-150)
 
 Toggle.MouseButton1Click:Connect(function()
 	if not Main.Visible then return end
+	opened = not opened
 	
-	open = not open
-	if open then
-		openUI()
-	else
-		closeUI()
+	local goal = opened and openPos or closePos
+	local tween = TweenService:Create(Main, TweenInfo.new(0.35, Enum.EasingStyle.Quad), {Position = goal})
+	tween:Play()
+
+	if not opened then
+		tween.Completed:Wait()
+		Main.Visible = false
 	end
 end)
