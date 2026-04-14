@@ -1,86 +1,144 @@
---// ALL IN ONE DUPE SYSTEM
-
+--// SERVICES
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local player = Players.LocalPlayer
 
--- Create RemoteEvent if it doesn't exist
-local remote = ReplicatedStorage:FindFirstChild("DuplicateItem")
+--// CREATE REMOTE IF NOT EXISTS
+local remote = ReplicatedStorage:FindFirstChild("DupeRapier")
 if not remote then
     remote = Instance.new("RemoteEvent")
-    remote.Name = "DuplicateItem"
+    remote.Name = "DupeRapier"
     remote.Parent = ReplicatedStorage
 end
 
---// ================= GUI =================
-local gui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
-gui.Name = "DupeGUI"
+--// CREATE SERVER SCRIPT (only runs once)
+if not ReplicatedStorage:FindFirstChild("DupeRapier_Server") then
+    local serverScript = Instance.new("Script")
+    serverScript.Name = "DupeRapier_Server"
+    serverScript.Parent = ReplicatedStorage
+    
+    serverScript.Source = [[
+        local remote = game.ReplicatedStorage:WaitForChild("DupeRapier")
 
-local frame = Instance.new("Frame", gui)
-frame.Size = UDim2.new(0, 250, 0, 150)
-frame.Position = UDim2.new(0.5, -125, 0.5, -75)
-frame.BackgroundColor3 = Color3.fromRGB(20,20,20)
-frame.BorderSizePixel = 2
+        remote.OnServerEvent:Connect(function(player, amount)
+            local char = player.Character
+            if not char then return end
 
-local title = Instance.new("TextLabel", frame)
+            local tool = char:FindFirstChild("captainsRapier")
+            if not tool or not tool:IsA("Tool") then return end
+
+            amount = math.clamp(amount, 1, 50)
+
+            local stack = tool:FindFirstChild("Amount")
+
+            if stack and stack:IsA("IntValue") then
+                stack.Value += amount
+            else
+                for i = 1, amount do
+                    local clone = tool:Clone()
+                    clone.Parent = player.Backpack
+                end
+            end
+        end)
+    ]]
+end
+
+--// GUI
+local gui = Instance.new("ScreenGui")
+gui.Name = "RapierDupeUI"
+gui.ResetOnSpawn = false
+gui.Parent = player:WaitForChild("PlayerGui")
+
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, 250, 0, 140)
+frame.Position = UDim2.new(0.5, -125, 0.5, -70)
+frame.BackgroundColor3 = Color3.fromRGB(15,15,15)
+frame.BorderSizePixel = 0
+frame.Parent = gui
+
+local stroke = Instance.new("UIStroke", frame)
+stroke.Color = Color3.fromRGB(255,255,255)
+stroke.Thickness = 1
+
+local corner = Instance.new("UICorner", frame)
+corner.CornerRadius = UDim.new(0, 10)
+
+-- Title
+local title = Instance.new("TextLabel")
+title.Text = "Rapier Dupe"
 title.Size = UDim2.new(1,0,0,30)
-title.Text = "Item Duplicator"
-title.TextColor3 = Color3.new(1,1,1)
 title.BackgroundTransparency = 1
+title.TextColor3 = Color3.fromRGB(255,255,255)
+title.Font = Enum.Font.GothamBold
+title.TextSize = 16
+title.Parent = frame
 
-local box = Instance.new("TextBox", frame)
-box.Size = UDim2.new(0.8,0,0,30)
-box.Position = UDim2.new(0.1,0,0.4,0)
-box.PlaceholderText = "Amount"
-box.Text = ""
-box.TextColor3 = Color3.new(1,1,1)
-box.BackgroundColor3 = Color3.fromRGB(30,30,30)
+-- Input
+local box = Instance.new("TextBox")
+box.PlaceholderText = "Enter amount"
+box.Size = UDim2.new(0.8,0,0,35)
+box.Position = UDim2.new(0.1,0,0.35,0)
+box.BackgroundColor3 = Color3.fromRGB(25,25,25)
+box.TextColor3 = Color3.fromRGB(255,255,255)
+box.Font = Enum.Font.Gotham
+box.TextSize = 14
+box.Parent = frame
 
-local button = Instance.new("TextButton", frame)
-button.Size = UDim2.new(0.8,0,0,30)
+Instance.new("UICorner", box).CornerRadius = UDim.new(0,8)
+
+-- Button
+local button = Instance.new("TextButton")
+button.Text = "DUPE"
+button.Size = UDim2.new(0.8,0,0,35)
 button.Position = UDim2.new(0.1,0,0.7,0)
-button.Text = "DUPLICATE"
-button.TextColor3 = Color3.new(1,1,1)
-button.BackgroundColor3 = Color3.fromRGB(40,40,40)
+button.BackgroundColor3 = Color3.fromRGB(255,255,255)
+button.TextColor3 = Color3.fromRGB(0,0,0)
+button.Font = Enum.Font.GothamBold
+button.TextSize = 14
+button.Parent = frame
 
---// ================= CLIENT =================
-button.MouseButton1Click:Connect(function()
-    local char = player.Character
-    if not char then return end
+Instance.new("UICorner", button).CornerRadius = UDim.new(0,8)
 
-    local tool = char:FindFirstChildOfClass("Tool")
-    if not tool then return end
+--// DRAGGING
+local dragging, dragInput, startPos, startInputPos
 
-    local amount = tonumber(box.Text)
-    if not amount or amount <= 0 then return end
+frame.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
+        startPos = frame.Position
+        startInputPos = input.Position
 
-    remote:FireServer(tool.Name, amount)
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
 end)
 
---// ================= SERVER =================
-if game:GetService("RunService"):IsServer() then
+frame.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement then
+        dragInput = input
+    end
+end)
 
-    remote.OnServerEvent:Connect(function(plr, toolName, amount)
-        local char = plr.Character
-        if not char then return end
+game:GetService("UserInputService").InputChanged:Connect(function(input)
+    if input == dragInput and dragging then
+        local delta = input.Position - startInputPos
+        frame.Position = UDim2.new(
+            startPos.X.Scale,
+            startPos.X.Offset + delta.X,
+            startPos.Y.Scale,
+            startPos.Y.Offset + delta.Y
+        )
+    end
+end)
 
-        local tool = char:FindFirstChild(toolName)
-        if not tool or not tool:IsA("Tool") then return end
+--// BUTTON FUNCTION
+button.MouseButton1Click:Connect(function()
+    local amount = tonumber(box.Text)
+    if not amount then return end
 
-        -- Anti abuse
-        amount = math.clamp(amount, 1, 100)
-
-        local stack = tool:FindFirstChild("Amount")
-
-        if stack and stack:IsA("IntValue") then
-            stack.Value += amount
-        else
-            for i = 1, amount do
-                local clone = tool:Clone()
-                clone.Parent = plr.Backpack
-            end
-        end
-    end)
-
-end
+    remote:FireServer(amount)
+end)
