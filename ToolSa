@@ -1,0 +1,133 @@
+-- ✅ SILENT REAL DUPE ATTEMPT v3 for Islands (easy.gg) - April 2026
+-- Optimized for DELTA Executor (pure Lua, works on Xeno & Synapse X too)
+-- This version tries HARDER to make the dupe PERSIST after drop/place/rejoin/use
+-- It combines: client Amount set + tool cloning + multiple replication tricks + remote spam (if remotes exist)
+-- Chat command: /amount <number>  (while holding the tool in hand or backpack)
+-- After running, IMMEDIATELY drop/place the tool and rejoin for best chance
+
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
+local player = Players.LocalPlayer
+
+local PREFIX = "/amount "
+
+local lastValue = 0 -- tracks last set amount for re-apply
+
+local function getHeldTool()
+    local char = player.Character
+    if char then
+        for _, obj in ipairs(char:GetChildren()) do
+            if obj:IsA("Tool") then return obj end
+        end
+    end
+    local backpack = player:FindFirstChild("Backpack")
+    if backpack then
+        for _, obj in ipairs(backpack:GetChildren()) do
+            if obj:IsA("Tool") then return obj end
+        end
+    end
+    return nil
+end
+
+local function forceReplicate(tool, value)
+    if not tool then return end
+    lastValue = value
+    
+    -- Deep find Amount (covers nested cases in Islands tools)
+    local amountValue = tool:FindFirstChild("Amount", true)
+    if not amountValue or not amountValue:IsA("IntValue") then return end
+    
+    amountValue.Value = value
+    
+    -- CLONE the tool for real duplication attempt (this sometimes bypasses server checks)
+    local clone = tool:Clone()
+    clone.Parent = player.Backpack -- put copy in backpack
+    local cloneAmount = clone:FindFirstChild("Amount", true)
+    if cloneAmount then cloneAmount.Value = value end
+    
+    -- Multiple replication forces (these have worked in past Islands patches)
+    local originalParent = tool.Parent
+    task.spawn(function()
+        tool.Parent = nil
+        task.wait(0.02)
+        tool.Parent = originalParent
+        
+        clone.Parent = nil
+        task.wait(0.02)
+        clone.Parent = player.Backpack
+    end)
+    
+    -- Workspace bounce for stronger replication
+    task.spawn(function()
+        if originalParent then
+            tool.Parent = workspace
+            task.wait(0.03)
+            tool.Parent = originalParent
+            clone.Parent = workspace
+            task.wait(0.03)
+            clone.Parent = player.Backpack
+        end
+    end)
+    
+    -- Heartbeat lock (keeps value from reverting for a few seconds)
+    local connection
+    connection = RunService.Heartbeat:Connect(function()
+        if amountValue and amountValue.Parent then
+            amountValue.Value = value
+        else
+            connection:Disconnect()
+        end
+        -- Also lock the clone
+        if cloneAmount and cloneAmount.Parent then
+            cloneAmount.Value = value
+        end
+    end)
+    task.delay(8, function() if connection then connection:Disconnect() end end)
+    
+    -- Try firing common Islands remotes (Drop, Place, Save, etc.) to force server accept
+    pcall(function()
+        local remotes = ReplicatedStorage:FindFirstChild("Remotes") or ReplicatedStorage:FindFirstChild("Events") or ReplicatedStorage
+        for _, remote in ipairs(remotes:GetDescendants()) do
+            if remote:IsA("RemoteEvent") then
+                local name = remote.Name:lower()
+                if name:find("drop") or name:find("place") or name:find("save") or name:find("tool") or name:find("inventory") then
+                    remote:FireServer(tool, value)   -- tell server new amount
+                    remote:FireServer(clone, value)  -- also for clone
+                end
+            end
+        end
+    end)
+end
+
+player.Chatted:Connect(function(message)
+    if not message:lower():sub(1, #PREFIX) == PREFIX:lower() then return end
+    
+    local valueStr = message:sub(#PREFIX + 1):match("^%s*(.-)%s*$")
+    local value = tonumber(valueStr)
+    if not value or value < 1 then return end
+    
+    local tool = getHeldTool()
+    if not tool then return end
+    
+    forceReplicate(tool, value)
+    
+    -- Re-apply on any tool change (helps after drop/pickup)
+    task.delay(0.2, function()
+        local newTool = getHeldTool()
+        if newTool then forceReplicate(newTool, value) end
+    end)
+end)
+
+-- Auto keep alive on character respawn / island travel
+player.CharacterAdded:Connect(function()
+    task.wait(1.5)
+    local tool = getHeldTool()
+    if tool and lastValue > 0 then
+        forceReplicate(tool, lastValue)
+    end
+end)
+
+print("✅ Islands Silent Real-Dupe v3 loaded for DELTA")
+print("   /amount <number> while holding tool")
+print("   Drop/place immediately after + rejoin for max persistence chance")
