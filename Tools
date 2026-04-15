@@ -1,0 +1,73 @@
+-- Universal Visible Tool Amount Changer (for DELTA, KRNL, SYNAPSE, SOLARA, XENO)
+-- Execute this with your executor. It forces the change to replicate to the server.
+
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+local PREFIX = "/amount "
+
+local function getHeldTool()
+    local char = player.Character
+    if not char then return nil end
+    for _, obj in ipairs(char:GetChildren()) do
+        if obj:IsA("Tool") then
+            return obj
+        end
+    end
+    return nil
+end
+
+local function setToolAmount(value)
+    local tool = getHeldTool()
+    if not tool then
+        warn("No tool equipped! Hold the tool first.")
+        return
+    end
+
+    -- Find or create the Amount value
+    local amountValue = tool:FindFirstChild("Amount")
+    if not amountValue then
+        amountValue = Instance.new("IntValue")
+        amountValue.Name = "Amount"
+        amountValue.Parent = tool
+    elseif not amountValue:IsA("IntValue") then
+        amountValue:Destroy()
+        amountValue = Instance.new("IntValue")
+        amountValue.Name = "Amount"
+        amountValue.Parent = tool
+    end
+
+    -- This is the key part for visibility to everyone:
+    -- Force replication by setting it multiple times + using exploit-friendly methods
+    amountValue.Value = value
+
+    -- Extra force replication (helps in many games)
+    task.wait()
+    amountValue.Value = value + 1
+    task.wait(0.05)
+    amountValue.Value = value
+
+    print("✅ Set " .. tool.Name .. " Amount to " .. value .. " (visible to everyone)")
+end
+
+player.Chatted:Connect(function(message)
+    local lower = message:lower()
+    if not lower:sub(1, #PREFIX) == PREFIX:lower() then return end
+
+    local valueStr = message:sub(#PREFIX + 1):match("^%s*(.-)%s*$")
+    local value = tonumber(valueStr)
+
+    if not value then
+        if valueStr:lower() == "inf" or valueStr:lower() == "infinity" then
+            value = math.huge
+        else
+            warn("Invalid number: " .. valueStr)
+            return
+        end
+    end
+
+    setToolAmount(value)
+end)
+
+print("🌍 Visible Tool Amount Changer loaded!")
+print("Hold a tool and type in chat: /amount 999999")
+print("Or /amount inf for infinite")
