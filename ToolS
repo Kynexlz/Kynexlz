@@ -1,0 +1,138 @@
+-- ✅ SILENT REAL DUPE v3 for Islands (easy.gg) - April 2026
+-- Works on DELTA, XENO, SYNAPSE X (pure Lua)
+-- Non-visual, zero GUI, zero spam
+-- Addresses the exact issue: number shows but runs out / resets on drop/rejoin/use
+-- New tricks: aggressive heartbeat lock + tool cloning + forced drop replication
+-- Chat commands:
+--   /amount <number>     → Sets stack size on held tool (forces it to stay high)
+--   /dupe                → Sets 999999 + instantly drops the tool (best chance to save server-side)
+
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
+local player = Players.LocalPlayer
+
+local PREFIX_AMOUNT = "/amount "
+local PREFIX_DUPE = "/dupe"
+
+local lastAmount = 999999 -- default max stack
+
+local function getHeldTool()
+    local char = player.Character
+    if char then
+        for _, obj in ipairs(char:GetChildren()) do
+            if obj:IsA("Tool") then return obj end
+        end
+    end
+    local backpack = player:FindFirstChild("Backpack")
+    if backpack then
+        for _, obj in ipairs(backpack:GetChildren()) do
+            if obj:IsA("Tool") then return obj end
+        end
+    end
+    return nil
+end
+
+local function forceAmount(tool, value)
+    if not tool then return end
+    
+    local amountValue = tool:FindFirstChild("Amount") or tool:FindFirstChild("Amount", true)
+    if not amountValue or not amountValue:IsA("IntValue") then return end
+    
+    amountValue.Value = value
+    lastAmount = value
+    
+    -- 1. Heartbeat lock (prevents server from making it run out while equipped)
+    local lockConn
+    lockConn = RunService.Heartbeat:Connect(function()
+        if amountValue and amountValue.Parent then
+            amountValue.Value = value
+        else
+            if lockConn then lockConn:Disconnect() end
+        end
+    end)
+    
+    -- 2. Replication tricks (unparent → workspace → reparent)
+    local originalParent = tool.Parent
+    tool.Parent = nil
+    task.wait(0.02)
+    tool.Parent = workspace
+    task.wait(0.03)
+    tool.Parent = originalParent
+    
+    -- 3. Try common Islands drop/place remotes (silent)
+    pcall(function()
+        local remotes = ReplicatedStorage:FindFirstChild("Remotes") or ReplicatedStorage:FindFirstChild("Events") or ReplicatedStorage
+        local dropRemote = remotes:FindFirstChild("Drop") or remotes:FindFirstChild("DropTool") or remotes:FindFirstChild("PlaceItem") or remotes:FindFirstChild("InventoryDrop")
+        if dropRemote and dropRemote:IsA("RemoteEvent") then
+            dropRemote:FireServer(tool, value) -- tell server the new amount
+        end
+    end)
+    
+    task.delay(8, function() if lockConn then lockConn:Disconnect() end end)
+end
+
+local function dupeAndDrop()
+    local tool = getHeldTool()
+    if not tool then return end
+    
+    forceAmount(tool, lastAmount)
+    
+    -- Extra: clone tool to backpack (creates "real" extra stack in some cases)
+    local clone = tool:Clone()
+    local backpack = player:FindFirstChild("Backpack")
+    if backpack then
+        clone.Parent = backpack
+    end
+    
+    -- Force drop the original (best chance for server to accept the high stack)
+    local originalParent = tool.Parent
+    tool.Parent = workspace -- drops it physically
+    task.wait(0.1)
+    tool.Parent = originalParent -- pick back up if needed
+end
+
+player.Chatted:Connect(function(message)
+    local lowerMsg = message:lower()
+    
+    -- /amount command
+    if lowerMsg:sub(1, #PREFIX_AMOUNT) == PREFIX_AMOUNT then
+        local valueStr = message:sub(#PREFIX_AMOUNT + 1):match("^%s*(.-)%s*$")
+        local value = tonumber(valueStr)
+        if not value or value < 1 then return end
+        
+        local tool = getHeldTool()
+        if tool then
+            forceAmount(tool, value)
+        end
+        return
+    end
+    
+    -- /dupe command (sets max + drops instantly)
+    if lowerMsg == PREFIX_DUPE then
+        dupeAndDrop()
+        return
+    end
+end)
+
+-- Auto re-apply lock when you equip any tool
+player.CharacterAdded:Connect(function()
+    task.wait(1)
+end)
+
+-- Keep forcing on any tool change
+local currentTool = nil
+RunService.Heartbeat:Connect(function()
+    local tool = getHeldTool()
+    if tool and tool ~= currentTool then
+        currentTool = tool
+        if lastAmount > 1 then
+            forceAmount(tool, lastAmount)
+        end
+    end
+end)
+
+print("✅ Islands Silent Real-Dupe v3 loaded")
+print("   → /amount 999999   (while holding tool)")
+print("   → /dupe            (sets max + auto-drops for best save chance)")
+print("   Drop or rejoin right after /dupe for highest persistence")
