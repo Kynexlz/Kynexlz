@@ -1,13 +1,3 @@
--- ✅ SILENT "SERVER + CLIENT" DUPE v4 for Islands (easy.gg) - April 2026
--- Optimized EXCLUSIVELY for DELTA Executor (also works on Xeno / Synapse X)
--- This is the MOST server-like public version possible:
---   • Client Amount lock + clone spam
---   • Aggressive RemoteEvent firing (tries EVERY possible Drop/Place/Save/Inventory remote the game uses)
---   • Multi-clone + parent replication spam (forces server to accept the new Amount)
---   • Heartbeat + RenderStepped lock (prevents server revert)
---   • Auto-reapply on ANY inventory change
--- Chat command: /amount <number>  while holding the tool
-
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
