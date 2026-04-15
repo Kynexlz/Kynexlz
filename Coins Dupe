@@ -1,0 +1,180 @@
+local Players = game:GetService("Players")
+local UIS = game:GetService("UserInputService")
+
+local player = Players.LocalPlayer
+
+local leaderstats = Instance.new("Folder")
+leaderstats.Name = "leaderstats"
+leaderstats.Parent = player
+
+local coins = Instance.new("IntValue") -- FIND OUT THE LEADERSTATS, MOST OLD GAMES USE THIS
+coins.Name = "Coins"
+coins.Value = 0
+coins.Parent = leaderstats
+
+local gui = Instance.new("ScreenGui")
+gui.Name = "CoinsPanel"
+gui.ResetOnSpawn = false
+gui.Parent = player:WaitForChild("PlayerGui")
+
+local main = Instance.new("Frame")
+main.Size = UDim2.new(0, 340, 0, 290)
+main.Position = UDim2.new(0.5, 0, 0.5, 0)
+main.AnchorPoint = Vector2.new(0.5, 0.5)
+main.BackgroundColor3 = Color3.fromRGB(18, 18, 22)
+main.BorderSizePixel = 0
+main.Visible = false
+main.Parent = gui
+
+Instance.new("UICorner", main).CornerRadius = UDim.new(0, 14)
+
+local stroke = Instance.new("UIStroke")
+stroke.Color = Color3.fromRGB(0, 170, 255)
+stroke.Transparency = 0.4
+stroke.Parent = main
+
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, 0, 0, 40)
+title.BackgroundTransparency = 1
+title.Text = "Coins Panel"
+title.TextColor3 = Color3.fromRGB(255, 255, 255)
+title.Font = Enum.Font.GothamBold
+title.TextSize = 18
+title.Parent = main
+
+local coinDisplay = Instance.new("TextLabel")
+coinDisplay.Size = UDim2.new(1, -20, 0, 28)
+coinDisplay.Position = UDim2.new(0, 10, 0, 45)
+coinDisplay.BackgroundTransparency = 1
+coinDisplay.TextColor3 = Color3.fromRGB(0, 255, 170)
+coinDisplay.Font = Enum.Font.GothamBold
+coinDisplay.TextSize = 15
+coinDisplay.TextXAlignment = Enum.TextXAlignment.Left
+coinDisplay.Text = "Coins: 0"
+coinDisplay.Parent = main
+
+coins.Changed:Connect(function()
+	coinDisplay.Text = "Coins: " .. coins.Value
+end)
+
+local input = Instance.new("TextBox")
+input.Size = UDim2.new(1, -20, 0, 40)
+input.Position = UDim2.new(0, 10, 0, 80)
+input.PlaceholderText = "Enter coins amount (MAX 1000)"
+input.Text = ""
+input.BackgroundColor3 = Color3.fromRGB(28, 28, 34)
+input.TextColor3 = Color3.fromRGB(255, 255, 255)
+input.Font = Enum.Font.Gotham
+input.TextSize = 14
+input.Parent = main
+
+Instance.new("UICorner", input).CornerRadius = UDim.new(0, 10)
+
+local button = Instance.new("TextButton")
+button.Size = UDim2.new(1, -20, 0, 40)
+button.Position = UDim2.new(0, 10, 0, 130)
+button.Text = "Add Coins"
+button.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
+button.TextColor3 = Color3.fromRGB(255, 255, 255)
+button.Font = Enum.Font.GothamBold
+button.TextSize = 14
+button.Parent = main
+
+Instance.new("UICorner", button).CornerRadius = UDim.new(0, 10)
+
+local logFrame = Instance.new("ScrollingFrame")
+logFrame.Size = UDim2.new(1, -20, 0, 90)
+logFrame.Position = UDim2.new(0, 10, 0, 180)
+logFrame.BackgroundColor3 = Color3.fromRGB(22, 22, 26)
+logFrame.BorderSizePixel = 0
+logFrame.ScrollBarThickness = 3
+logFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
+logFrame.Parent = main
+
+Instance.new("UICorner", logFrame).CornerRadius = UDim.new(0, 10)
+
+local layout = Instance.new("UIListLayout")
+layout.Padding = UDim.new(0, 4)
+layout.Parent = logFrame
+
+local function addLog(text)
+	local label = Instance.new("TextLabel")
+	label.Size = UDim2.new(1, -10, 0, 18)
+	label.BackgroundTransparency = 1
+	label.TextColor3 = Color3.fromRGB(200, 200, 200)
+	label.Font = Enum.Font.Gotham
+	label.TextSize = 12
+	label.TextXAlignment = Enum.TextXAlignment.Left
+	label.Text = text
+	label.Parent = logFrame
+end
+
+local open = false
+
+local function openGui()
+	main.Visible = true
+	main:TweenSize(UDim2.new(0, 340, 0, 290), "Out", "Quint", 0.25, true)
+end
+
+local function closeGui()
+	main:TweenSize(UDim2.new(0, 0, 0, 0), "In", "Quint", 0.2, true)
+	task.wait(0.2)
+	main.Visible = false
+end
+
+UIS.InputBegan:Connect(function(input, processed)
+	if processed then return end
+	if input.KeyCode == Enum.KeyCode.Z then
+		open = not open
+		if open then openGui() else closeGui() end
+	end
+end)
+
+local toggleBtn = Instance.new("TextButton")
+toggleBtn.Size = UDim2.new(0, 55, 0, 55)
+toggleBtn.Position = UDim2.new(0.5, 0, 1, -80)
+toggleBtn.AnchorPoint = Vector2.new(0.5, 0.5)
+toggleBtn.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+toggleBtn.Text = "🪙"
+toggleBtn.TextSize = 24
+toggleBtn.Font = Enum.Font.GothamBold
+toggleBtn.Parent = gui
+
+Instance.new("UICorner", toggleBtn).CornerRadius = UDim.new(0, 12)
+
+toggleBtn.MouseButton1Click:Connect(function()
+	open = not open
+	if open then openGui() else closeGui() end
+end)
+
+local cooldown = false
+local MAX_COINS = 1000
+local COOLDOWN_TIME = 2
+
+button.MouseButton1Click:Connect(function()
+	if cooldown then
+		addLog("⏳ Wait for cooldown (2s)")
+		return
+	end
+
+	local amount = tonumber(input.Text)
+
+	if not amount then
+		addLog("❌ Invalid number")
+		return
+	end
+
+	if amount > MAX_COINS then
+		addLog("⚠ Max is 1000 coins per click")
+		return
+	end
+
+	cooldown = true
+
+	coins.Value += amount
+	addLog("➕ Added " .. amount .. " coins")
+
+	task.delay(COOLDOWN_TIME, function()
+		cooldown = false
+	end)
+end)
