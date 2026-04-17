@@ -1,0 +1,349 @@
+-- Modern Mobile-Friendly Islands Visual Dupe GUI (2026 Style)
+-- LocalScript → StarterPlayer > StarterPlayerScripts
+
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "IslandsModernDupe"
+screenGui.ResetOnSpawn = false
+screenGui.IgnoreGuiInset = true
+screenGui.Parent = playerGui
+
+-- Adaptive size for mobile + desktop
+local isMobile = UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled
+local guiWidth = isMobile and 0.95 or 0.42
+local guiHeight = isMobile and 0.85 or 0.75
+
+local mainFrame = Instance.new("Frame")
+mainFrame.Name = "MainFrame"
+mainFrame.Size = UDim2.new(guiWidth, 0, guiHeight, 0)
+mainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
+mainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
+mainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
+mainFrame.BorderSizePixel = 0
+mainFrame.Parent = screenGui
+
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0, 16)
+corner.Parent = mainFrame
+
+local stroke = Instance.new("UIStroke")
+stroke.Color = Color3.fromRGB(60, 60, 80)
+stroke.Thickness = 2
+stroke.Transparency = 0.4
+stroke.Parent = mainFrame
+
+-- Subtle gradient for modern look
+local gradient = Instance.new("UIGradient")
+gradient.Color = ColorSequence.new{
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(30, 30, 40)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(15, 15, 20))
+}
+gradient.Rotation = 90
+gradient.Parent = mainFrame
+
+-- Title Bar
+local titleBar = Instance.new("Frame")
+titleBar.Size = UDim2.new(1, 0, 0, 60)
+titleBar.BackgroundTransparency = 1
+titleBar.Parent = mainFrame
+
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, -70, 1, 0)
+title.Position = UDim2.new(0, 20, 0, 0)
+title.BackgroundTransparency = 1
+title.Text = "Islands Dupe"
+title.TextColor3 = Color3.fromRGB(255, 255, 255)
+title.TextScaled = true
+title.Font = Enum.Font.GothamBlack
+title.TextXAlignment = Enum.TextXAlignment.Left
+title.Parent = titleBar
+
+local closeBtn = Instance.new("TextButton")
+closeBtn.Size = UDim2.new(0, 40, 0, 40)
+closeBtn.Position = UDim2.new(1, -50, 0, 10)
+closeBtn.BackgroundColor3 = Color3.fromRGB(220, 50, 50)
+closeBtn.Text = "✕"
+closeBtn.TextColor3 = Color3.new(1, 1, 1)
+closeBtn.Font = Enum.Font.GothamBold
+closeBtn.TextScaled = true
+closeBtn.Parent = titleBar
+
+local closeCorner = Instance.new("UICorner")
+closeCorner.CornerRadius = UDim.new(0, 10)
+closeCorner.Parent = closeBtn
+
+-- Search Bar
+local searchBox = Instance.new("TextBox")
+searchBox.Size = UDim2.new(1, -40, 0, 55)
+searchBox.Position = UDim2.new(0, 20, 0, 75)
+searchBox.PlaceholderText = "🔍 Search tools..."
+searchBox.Text = ""
+searchBox.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
+searchBox.TextColor3 = Color3.new(1, 1, 1)
+searchBox.PlaceholderColor3 = Color3.fromRGB(160, 160, 180)
+searchBox.Font = Enum.Font.Gotham
+searchBox.TextSize = 18
+searchBox.ClearTextOnFocus = false
+searchBox.Parent = mainFrame
+
+local searchCorner = Instance.new("UICorner")
+searchCorner.CornerRadius = UDim.new(0, 12)
+searchCorner.Parent = searchBox
+
+-- Quantity Section
+local qtyFrame = Instance.new("Frame")
+qtyFrame.Size = UDim2.new(1, -40, 0, 60)
+qtyFrame.Position = UDim2.new(0, 20, 0, 145)
+qtyFrame.BackgroundTransparency = 1
+qtyFrame.Parent = mainFrame
+
+local qtyLabel = Instance.new("TextLabel")
+qtyLabel.Size = UDim2.new(0.4, 0, 1, 0)
+qtyLabel.BackgroundTransparency = 1
+qtyLabel.Text = "Quantity"
+qtyLabel.TextColor3 = Color3.new(1, 1, 1)
+qtyLabel.TextXAlignment = Enum.TextXAlignment.Left
+qtyLabel.Font = Enum.Font.GothamSemibold
+qtyLabel.TextSize = 18
+qtyLabel.Parent = qtyFrame
+
+local qtyBox = Instance.new("TextBox")
+qtyBox.Size = UDim2.new(0.35, 0, 1, 0)
+qtyBox.Position = UDim2.new(0.4, 0, 0, 0)
+qtyBox.Text = "1"
+qtyBox.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
+qtyBox.TextColor3 = Color3.new(1, 1, 1)
+qtyBox.Font = Enum.Font.GothamBold
+qtyBox.TextSize = 22
+qtyBox.Parent = qtyFrame
+
+local qtyCorner = Instance.new("UICorner")
+qtyCorner.CornerRadius = UDim.new(0, 12)
+qtyCorner.Parent = qtyBox
+
+-- +/- Buttons
+local minusBtn = Instance.new("TextButton")
+minusBtn.Size = UDim2.new(0.1, 0, 1, 0)
+minusBtn.Position = UDim2.new(0.78, 0, 0, 0)
+minusBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
+minusBtn.Text = "-"
+minusBtn.TextColor3 = Color3.new(1, 1, 1)
+minusBtn.Font = Enum.Font.GothamBold
+minusBtn.TextSize = 24
+minusBtn.Parent = qtyFrame
+
+local plusBtn = Instance.new("TextButton")
+plusBtn.Size = UDim2.new(0.1, 0, 1, 0)
+plusBtn.Position = UDim2.new(0.89, 0, 0, 0)
+plusBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
+plusBtn.Text = "+"
+plusBtn.TextColor3 = Color3.new(1, 1, 1)
+plusBtn.Font = Enum.Font.GothamBold
+plusBtn.TextSize = 24
+plusBtn.Parent = qtyFrame
+
+for _, btn in {minusBtn, plusBtn} do
+	local c = Instance.new("UICorner")
+	c.CornerRadius = UDim.new(0, 12)
+	c.Parent = btn
+end
+
+-- Scrolling Tool List
+local scrollFrame = Instance.new("ScrollingFrame")
+scrollFrame.Size = UDim2.new(1, -40, 0.48, 0)
+scrollFrame.Position = UDim2.new(0, 20, 0, 220)
+scrollFrame.BackgroundTransparency = 1
+scrollFrame.ScrollBarThickness = 8
+scrollFrame.ScrollBarImageColor3 = Color3.fromRGB(100, 100, 120)
+scrollFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+scrollFrame.Parent = mainFrame
+
+local listLayout = Instance.new("UIListLayout")
+listLayout.Padding = UDim.new(0, 10)
+listLayout.SortOrder = Enum.SortOrder.Name
+listLayout.Parent = scrollFrame
+
+-- Duplicate Button (big & prominent for mobile)
+local dupeButton = Instance.new("TextButton")
+dupeButton.Size = UDim2.new(1, -40, 0, 65)
+dupeButton.Position = UDim2.new(0, 20, 1, -85)
+dupeButton.BackgroundColor3 = Color3.fromRGB(0, 200, 120)
+dupeButton.Text = "Duplicate"
+dupeButton.TextColor3 = Color3.new(1, 1, 1)
+dupeButton.Font = Enum.Font.GothamBold
+dupeButton.TextSize = 20
+dupeButton.Parent = mainFrame
+
+local dupeCorner = Instance.new("UICorner")
+dupeCorner.CornerRadius = UDim.new(0, 14)
+dupeCorner.Parent = dupeButton
+
+local dupeStroke = Instance.new("UIStroke")
+dupeStroke.Color = Color3.fromRGB(0, 255, 150)
+dupeStroke.Thickness = 2
+dupeStroke.Parent = dupeButton
+
+-- Get Tools
+local toolsFolder = ReplicatedStorage:FindFirstChild("Tools") or ReplicatedStorage:FindFirstChild("tools") -- case insensitive fallback
+local toolButtons = {}
+
+local function createToolButton(tool)
+	if not tool:IsA("Tool") and not tool:IsA("Folder") then return end -- support subfolders if any
+	
+	local btn = Instance.new("TextButton")
+	btn.Size = UDim2.new(1, 0, 0, 65)
+	btn.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+	btn.Text = "  " .. tool.Name
+	btn.TextColor3 = Color3.new(1, 1, 1)
+	btn.Font = Enum.Font.GothamSemibold
+	btn.TextSize = 17
+	btn.TextXAlignment = Enum.TextXAlignment.Left
+	btn.Parent = scrollFrame
+	
+	local btnCorner = Instance.new("UICorner")
+	btnCorner.CornerRadius = UDim.new(0, 12)
+	btnCorner.Parent = btn
+	
+	local btnStroke = Instance.new("UIStroke")
+	btnStroke.Color = Color3.fromRGB(70, 70, 85)
+	btnStroke.Thickness = 1
+	btnStroke.Parent = btn
+	
+	btn.MouseButton1Click:Connect(function()
+		for _, b in pairs(toolButtons) do
+			b.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+		end
+		btn.BackgroundColor3 = Color3.fromRGB(80, 140, 200)
+		btn:SetAttribute("SelectedTool", tool)
+	end)
+	
+	table.insert(toolButtons, btn)
+end
+
+if toolsFolder then
+	for _, item in pairs(toolsFolder:GetDescendants()) do
+		if item:IsA("Tool") then
+			createToolButton(item)
+		end
+	end
+end
+
+-- Update canvas
+listLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+	scrollFrame.CanvasSize = UDim2.new(0, 0, 0, listLayout.AbsoluteContentSize.Y + 30)
+end)
+
+-- Live Search
+searchBox:GetPropertyChangedSignal("Text"):Connect(function()
+	local query = searchBox.Text:lower()
+	for _, btn in pairs(toolButtons) do
+		btn.Visible = btn.Text:lower():find(query) ~= nil
+	end
+end)
+
+-- Quantity +/- 
+minusBtn.MouseButton1Click:Connect(function()
+	local num = tonumber(qtyBox.Text) or 1
+	qtyBox.Text = math.max(1, num - 1)
+end)
+
+plusBtn.MouseButton1Click:Connect(function()
+	local num = tonumber(qtyBox.Text) or 1
+	qtyBox.Text = num + 1
+end)
+
+-- Duplicate Logic
+dupeButton.MouseButton1Click:Connect(function()
+	local qty = math.max(1, tonumber(qtyBox.Text) or 1)
+	local selectedTool = nil
+	
+	for _, btn in pairs(toolButtons) do
+		if btn.BackgroundColor3 == Color3.fromRGB(80, 140, 200) then
+			selectedTool = btn:GetAttribute("SelectedTool")
+			break
+		end
+	end
+	
+	if not selectedTool then return end
+	
+	local backpack = player:FindFirstChild("Backpack")
+	if not backpack then return end
+	
+	for i = 1, qty do
+		local clone = selectedTool:Clone()
+		clone.Parent = backpack
+	end
+	
+	-- Success animation + toast
+	local origColor = dupeButton.BackgroundColor3
+	dupeButton.BackgroundColor3 = Color3.fromRGB(0, 255, 140)
+	TweenService:Create(dupeButton, TweenInfo.new(0.3), {BackgroundColor3 = origColor}):Play()
+	
+	-- Simple toast
+	local toast = Instance.new("TextLabel")
+	toast.Size = UDim2.new(0.6, 0, 0, 50)
+	toast.Position = UDim2.new(0.2, 0, 0.8, 0)
+	toast.BackgroundColor3 = Color3.fromRGB(0, 180, 100)
+	toast.Text = "Duplicated " .. qty .. "x " .. selectedTool.Name .. "!"
+	toast.TextColor3 = Color3.new(1,1,1)
+	toast.Font = Enum.Font.GothamBold
+	toast.TextSize = 16
+	toast.Parent = screenGui
+	local tc = Instance.new("UICorner", toast)
+	tc.CornerRadius = UDim.new(0, 10)
+	
+	TweenService:Create(toast, TweenInfo.new(2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = UDim2.new(0.2, 0, 0.9, 0), BackgroundTransparency = 1, TextTransparency = 1}):Play()
+	game.Debris:AddItem(toast, 2.5)
+end)
+
+-- Close
+closeBtn.MouseButton1Click:Connect(function()
+	screenGui:Destroy()
+end)
+
+-- Advanced Dragging (Mouse + Touch)
+local dragging, dragInput, dragStart, startPos
+
+mainFrame.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+		dragging = true
+		dragStart = input.Position
+		startPos = mainFrame.Position
+		
+		input.Changed:Connect(function()
+			if input.UserInputState == Enum.UserInputState.End then
+				dragging = false
+			end
+		end)
+	end
+end)
+
+mainFrame.InputChanged:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+		dragInput = input
+	end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+	if dragging and (input == dragInput) then
+		local delta = input.Position - dragStart
+		mainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+	end
+end)
+
+print("✅ Modern Mobile Islands Dupe GUI loaded! Works great on phones & tablets.")
+
+-- Optional: Open animation
+mainFrame.BackgroundTransparency = 1
+mainFrame.Size = UDim2.new(0, 0, 0, 0)
+TweenService:Create(mainFrame, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+	BackgroundTransparency = 0,
+	Size = UDim2.new(guiWidth, 0, guiHeight, 0)
+}):Play()
