@@ -1,22 +1,21 @@
--- Islands Mobile Dupe GUI v2 - Optimized for iPhone XS
--- Uses Amount IntValue for real stacking (better chance of actually getting items)
+-- Islands Mobile Dupe GUI v3 - Uses held/equipped tool + Amount (closer to your working stack changer)
+-- Optimized for iPhone XS
 
 local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
 
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
 local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "IslandsDupeMobile"
+screenGui.Name = "IslandsDupeV3"
 screenGui.ResetOnSpawn = false
 screenGui.Parent = playerGui
 
--- Main Frame (compact for iPhone XS)
+-- Main Frame (iPhone XS friendly)
 local mainFrame = Instance.new("Frame")
-mainFrame.Size = UDim2.new(0, 320, 0, 440)
-mainFrame.Position = UDim2.new(0.5, -160, 0.5, -220)
+mainFrame.Size = UDim2.new(0, 320, 0, 460)
+mainFrame.Position = UDim2.new(0.5, -160, 0.5, -230)
 mainFrame.BackgroundColor3 = Color3.fromRGB(28, 28, 33)
 mainFrame.BorderSizePixel = 0
 mainFrame.Parent = screenGui
@@ -35,13 +34,13 @@ local title = Instance.new("TextLabel")
 title.Size = UDim2.new(1, -70, 0, 45)
 title.Position = UDim2.new(0, 15, 0, 10)
 title.BackgroundTransparency = 1
-title.Text = "Islands Dupe"
+title.Text = "Islands Dupe v3"
 title.TextColor3 = Color3.fromRGB(255, 255, 255)
 title.TextScaled = true
 title.Font = Enum.Font.GothamBold
 title.Parent = mainFrame
 
--- Close
+-- Close Button
 local closeBtn = Instance.new("TextButton")
 closeBtn.Size = UDim2.new(0, 35, 0, 35)
 closeBtn.Position = UDim2.new(1, -45, 0, 10)
@@ -52,19 +51,15 @@ closeBtn.TextScaled = true
 closeBtn.Font = Enum.Font.GothamBold
 closeBtn.Parent = mainFrame
 
-local closeCorner = Instance.new("UICorner")
-closeCorner.CornerRadius = UDim.new(0, 10)
-closeCorner.Parent = closeBtn
-
 closeBtn.MouseButton1Click:Connect(function()
 	screenGui:Destroy()
 end)
 
--- Search Bar
+-- Search
 local searchBox = Instance.new("TextBox")
 searchBox.Size = UDim2.new(1, -30, 0, 40)
 searchBox.Position = UDim2.new(0, 15, 0, 65)
-searchBox.PlaceholderText = "Search tool..."
+searchBox.PlaceholderText = "Search your tools..."
 searchBox.BackgroundColor3 = Color3.fromRGB(45, 45, 52)
 searchBox.TextColor3 = Color3.new(1,1,1)
 searchBox.PlaceholderColor3 = Color3.fromRGB(170,170,180)
@@ -77,7 +72,7 @@ local sCorner = Instance.new("UICorner")
 sCorner.CornerRadius = UDim.new(0, 10)
 sCorner.Parent = searchBox
 
--- Quantity
+-- Amount
 local qtyLabel = Instance.new("TextLabel")
 qtyLabel.Size = UDim2.new(0.35, 0, 0, 30)
 qtyLabel.Position = UDim2.new(0, 15, 0, 115)
@@ -92,7 +87,7 @@ qtyLabel.Parent = mainFrame
 local qtyBox = Instance.new("TextBox")
 qtyBox.Size = UDim2.new(0.55, 0, 0, 38)
 qtyBox.Position = UDim2.new(0.4, 0, 0, 112)
-qtyBox.Text = "10"
+qtyBox.Text = "10000"
 qtyBox.BackgroundColor3 = Color3.fromRGB(45, 45, 52)
 qtyBox.TextColor3 = Color3.new(1,1,1)
 qtyBox.TextSize = 18
@@ -103,9 +98,9 @@ local qCorner = Instance.new("UICorner")
 qCorner.CornerRadius = UDim.new(0, 10)
 qCorner.Parent = qtyBox
 
--- Scroll
+-- Scroll for your current tools
 local scroll = Instance.new("ScrollingFrame")
-scroll.Size = UDim2.new(1, -30, 0, 195)
+scroll.Size = UDim2.new(1, -30, 0, 190)
 scroll.Position = UDim2.new(0, 15, 0, 160)
 scroll.BackgroundTransparency = 1
 scroll.ScrollBarThickness = 5
@@ -118,7 +113,7 @@ listLayout.Padding = UDim.new(0, 6)
 listLayout.SortOrder = Enum.SortOrder.Name
 listLayout.Parent = scroll
 
--- Big Duplicate Button
+-- Big Button
 local dupeBtn = Instance.new("TextButton")
 dupeBtn.Size = UDim2.new(1, -30, 0, 55)
 dupeBtn.Position = UDim2.new(0, 15, 1, -75)
@@ -133,57 +128,58 @@ local dCorner = Instance.new("UICorner")
 dCorner.CornerRadius = UDim.new(0, 12)
 dCorner.Parent = dupeBtn
 
--- Get Tools
-local toolsFolder = ReplicatedStorage:FindFirstChild("Tools")
 local toolButtons = {}
+local function refreshToolList()
+	for _, btn in pairs(toolButtons) do btn:Destroy() end
+	toolButtons = {}
 
-local function createToolButton(tool)
-	if not tool:IsA("Tool") then return end
+	local backpack = player:FindFirstChild("Backpack")
+	local character = player.Character
 
-	local btn = Instance.new("TextButton")
-	btn.Size = UDim2.new(1, 0, 0, 48)
-	btn.BackgroundColor3 = Color3.fromRGB(48, 48, 55)
-	btn.Text = "  " .. tool.Name
-	btn.TextColor3 = Color3.new(1,1,1)
-	btn.TextXAlignment = Enum.TextXAlignment.Left
-	btn.TextSize = 16
-	btn.Font = Enum.Font.Gotham
-	btn.Parent = scroll
-
-	local btnCorner = Instance.new("UICorner")
-	btnCorner.CornerRadius = UDim.new(0, 10)
-	btnCorner.Parent = btn
-
-	btn.MouseButton1Click:Connect(function()
-		for _, b in pairs(toolButtons) do
-			b.BackgroundColor3 = Color3.fromRGB(48, 48, 55)
+	local tools = {}
+	if backpack then
+		for _, t in pairs(backpack:GetChildren()) do
+			if t:IsA("Tool") then table.insert(tools, t) end
 		end
-		btn.BackgroundColor3 = Color3.fromRGB(80, 140, 200)
-		btn:SetAttribute("SelectedTool", tool)
-	end)
+	end
+	if character then
+		for _, t in pairs(character:GetChildren()) do
+			if t:IsA("Tool") then table.insert(tools, t) end
+		end
+	end
 
-	table.insert(toolButtons, btn)
-end
+	for _, tool in pairs(tools) do
+		local btn = Instance.new("TextButton")
+		btn.Size = UDim2.new(1, 0, 0, 48)
+		btn.BackgroundColor3 = Color3.fromRGB(48, 48, 55)
+		btn.Text = "  " .. tool.Name
+		btn.TextColor3 = Color3.new(1,1,1)
+		btn.TextXAlignment = Enum.TextXAlignment.Left
+		btn.TextSize = 16
+		btn.Font = Enum.Font.Gotham
+		btn.Parent = scroll
 
-if toolsFolder then
-	for _, tool in pairs(toolsFolder:GetChildren()) do
-		createToolButton(tool)
+		local btnCorner = Instance.new("UICorner")
+		btnCorner.CornerRadius = UDim.new(0, 10)
+		btnCorner.Parent = btn
+
+		btn.MouseButton1Click:Connect(function()
+			for _, b in pairs(toolButtons) do
+				b.BackgroundColor3 = Color3.fromRGB(48, 48, 55)
+			end
+			btn.BackgroundColor3 = Color3.fromRGB(80, 140, 200)
+			btn:SetAttribute("SelectedTool", tool)
+		end)
+
+		table.insert(toolButtons, btn)
 	end
 
 	listLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
 		scroll.CanvasSize = UDim2.new(0, 0, 0, listLayout.AbsoluteContentSize.Y + 20)
 	end)
-else
-	local warn = Instance.new("TextLabel")
-	warn.Size = UDim2.new(1, -30, 0, 80)
-	warn.Position = UDim2.new(0, 15, 0.35, 0)
-	warn.BackgroundTransparency = 1
-	warn.Text = "Tools folder not found in ReplicatedStorage.\nAmount-based dupe may not work."
-	warn.TextColor3 = Color3.fromRGB(255, 140, 140)
-	warn.TextScaled = true
-	warn.Font = Enum.Font.Gotham
-	warn.Parent = mainFrame
 end
+
+refreshToolList()
 
 -- Live Search
 searchBox:GetPropertyChangedSignal("Text"):Connect(function()
@@ -193,54 +189,64 @@ searchBox:GetPropertyChangedSignal("Text"):Connect(function()
 	end
 end)
 
--- Improved Dupe using Amount IntValue
+-- Dupe Logic (Improved - tries equipped first)
 dupeBtn.MouseButton1Click:Connect(function()
-	local qty = tonumber(qtyBox.Text) or 10
-	if qty < 1 then 
-		qty = 10 
-		qtyBox.Text = "10" 
-	end
+	local amount = tonumber(qtyBox.Text) or 10000
+	if amount < 1 then amount = 10000; qtyBox.Text = "10000" end
 
-	local selectedTool = nil
-	for _, btn in pairs(toolButtons) do
-		if btn.BackgroundColor3 == Color3.fromRGB(80, 140, 200) then
-			selectedTool = btn:GetAttribute("SelectedTool")
-			break
+	-- Prefer equipped tool (like your old stack changer)
+	local equippedTool = nil
+	if player.Character then
+		for _, child in pairs(player.Character:GetChildren()) do
+			if child:IsA("Tool") then
+				equippedTool = child
+				break
+			end
 		end
 	end
 
-	if not selectedTool then return end
+	local targetTool = equippedTool
+	if not targetTool then
+		-- Fall back to selected
+		for _, btn in pairs(toolButtons) do
+			if btn.BackgroundColor3 == Color3.fromRGB(80, 140, 200) then
+				targetTool = btn:GetAttribute("SelectedTool")
+				break
+			end
+		end
+	end
+
+	if not targetTool then
+		print("No tool selected or equipped. Hold the tool in your hand and try again.")
+		return
+	end
 
 	local backpack = player:FindFirstChild("Backpack")
 	if not backpack then return end
 
-	-- Clone the tool once
-	local clone = selectedTool:Clone()
+	local clone = targetTool:Clone()
 
-	-- Find or create Amount IntValue
-	local amountValue = clone:FindFirstChild("Amount")
-	if not amountValue then
-		amountValue = Instance.new("IntValue")
-		amountValue.Name = "Amount"
-		amountValue.Parent = clone
+	-- Set Amount
+	local amtVal = clone:FindFirstChild("Amount")
+	if not amtVal then
+		amtVal = Instance.new("IntValue")
+		amtVal.Name = "Amount"
+		amtVal.Parent = clone
 	end
+	amtVal.Value = amount
 
-	-- Set the stack size (this is the key change)
-	amountValue.Value = qty
-
-	-- Parent to backpack
 	clone.Parent = backpack
 
-	-- Visual feedback
-	local origColor = dupeBtn.BackgroundColor3
+	-- Feedback
+	local orig = dupeBtn.BackgroundColor3
 	dupeBtn.BackgroundColor3 = Color3.fromRGB(0, 255, 120)
-	task.wait(0.25)
-	dupeBtn.BackgroundColor3 = origColor
+	task.wait(0.3)
+	dupeBtn.BackgroundColor3 = orig
 
-	print("Duped " .. selectedTool.Name .. " with Amount = " .. qty)
+	print("Attempted dupe: " .. targetTool.Name .. " x " .. amount)
 end)
 
--- Draggable (works on mobile)
+-- Draggable
 local dragging = false
 local dragStart, startPos
 
@@ -255,8 +261,7 @@ end)
 mainFrame.InputChanged:Connect(function(input)
 	if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
 		local delta = input.Position - dragStart
-		mainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X,
-		                               startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+		mainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
 	end
 end)
 
@@ -266,4 +271,12 @@ UserInputService.InputEnded:Connect(function(input)
 	end
 end)
 
-print("Islands Mobile Dupe GUI v2 loaded - Amount IntValue support added")
+print("Islands Dupe v3 loaded - Try equipping the tool first, then duplicate (like the old stack changer)")
+
+-- Refresh list every 5 seconds in case you pick up new items
+task.spawn(function()
+	while screenGui.Parent do
+		task.wait(5)
+		refreshToolList()
+	end
+end)
