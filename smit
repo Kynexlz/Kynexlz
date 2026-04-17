@@ -1,5 +1,5 @@
--- Islands Dupe GUI - Mobile Style (iPhone XS) - Inspired by popular YouTube GUIs
--- Equip the tool first → Search & select → Set Amount → Dupe
+-- Islands Mobile Dupe GUI - Drop Style (iPhone XS optimized)
+-- Inspired by "DROPING DUPE ITEMS" videos - Equip → Set Amount → Drop manually for best results
 
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
@@ -8,15 +8,15 @@ local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
 local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "IslandsDupeGUI"
+screenGui.Name = "IslandsDropDupe"
 screenGui.ResetOnSpawn = false
 screenGui.Parent = playerGui
 
--- Main Frame (compact & clean for mobile)
+-- Main Frame
 local mainFrame = Instance.new("Frame")
 mainFrame.Size = UDim2.new(0, 325, 0, 460)
 mainFrame.Position = UDim2.new(0.5, -162.5, 0.5, -230)
-mainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+mainFrame.BackgroundColor3 = Color3.fromRGB(24, 24, 29)
 mainFrame.BorderSizePixel = 0
 mainFrame.Parent = screenGui
 
@@ -25,44 +25,34 @@ corner.CornerRadius = UDim.new(0, 18)
 corner.Parent = mainFrame
 
 local stroke = Instance.new("UIStroke")
-stroke.Color = Color3.fromRGB(60, 60, 70)
+stroke.Color = Color3.fromRGB(65, 65, 75)
 stroke.Thickness = 2
 stroke.Parent = mainFrame
 
--- Title Bar
-local titleBar = Instance.new("Frame")
-titleBar.Size = UDim2.new(1, 0, 0, 50)
-titleBar.BackgroundColor3 = Color3.fromRGB(35, 35, 40)
-titleBar.BorderSizePixel = 0
-titleBar.Parent = mainFrame
-
-local titleCorner = Instance.new("UICorner")
-titleCorner.CornerRadius = UDim.new(0, 18)
-titleCorner.Parent = titleBar
-
+-- Title
 local title = Instance.new("TextLabel")
-title.Size = UDim2.new(1, -60, 1, 0)
-title.Position = UDim2.new(0, 15, 0, 0)
+title.Size = UDim2.new(1, -70, 0, 50)
+title.Position = UDim2.new(0, 15, 0, 10)
 title.BackgroundTransparency = 1
-title.Text = "Islands Dupe"
-title.TextColor3 = Color3.fromRGB(0, 255, 120)
+title.Text = "Islands Drop Dupe"
+title.TextColor3 = Color3.fromRGB(0, 255, 130)
 title.TextScaled = true
 title.Font = Enum.Font.GothamBold
-title.Parent = titleBar
+title.Parent = mainFrame
 
 local closeBtn = Instance.new("TextButton")
-closeBtn.Size = UDim2.new(0, 40, 0, 40)
-closeBtn.Position = UDim2.new(1, -45, 0, 5)
-closeBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+closeBtn.Size = UDim2.new(0, 38, 0, 38)
+closeBtn.Position = UDim2.new(1, -48, 0, 16)
+closeBtn.BackgroundColor3 = Color3.fromRGB(210, 50, 50)
 closeBtn.Text = "✕"
 closeBtn.TextColor3 = Color3.new(1,1,1)
 closeBtn.TextScaled = true
 closeBtn.Font = Enum.Font.GothamBold
-closeBtn.Parent = titleBar
+closeBtn.Parent = mainFrame
 
-local closeC = Instance.new("UICorner")
-closeC.CornerRadius = UDim.new(0, 10)
-closeC.Parent = closeBtn
+local closeCorner = Instance.new("UICorner")
+closeCorner.CornerRadius = UDim.new(0, 10)
+closeCorner.Parent = closeBtn
 
 closeBtn.MouseButton1Click:Connect(function()
 	screenGui:Destroy()
@@ -71,9 +61,9 @@ end)
 -- Search
 local searchBox = Instance.new("TextBox")
 searchBox.Size = UDim2.new(1, -30, 0, 42)
-searchBox.Position = UDim2.new(0, 15, 0, 65)
+searchBox.Position = UDim2.new(0, 15, 0, 70)
 searchBox.PlaceholderText = "Search tool..."
-searchBox.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
+searchBox.BackgroundColor3 = Color3.fromRGB(38, 38, 44)
 searchBox.TextColor3 = Color3.new(1,1,1)
 searchBox.PlaceholderColor3 = Color3.fromRGB(160,160,170)
 searchBox.TextSize = 17
@@ -87,10 +77,10 @@ sc.Parent = searchBox
 
 -- Amount
 local amtLabel = Instance.new("TextLabel")
-amtLabel.Size = UDim2.new(0.38, 0, 0, 30)
-amtLabel.Position = UDim2.new(0, 15, 0, 120)
+amtLabel.Size = UDim2.new(0.4, 0, 0, 30)
+amtLabel.Position = UDim2.new(0, 15, 0, 125)
 amtLabel.BackgroundTransparency = 1
-amtLabel.Text = "Amount:"
+amtLabel.Text = "Amount to set:"
 amtLabel.TextColor3 = Color3.new(1,1,1)
 amtLabel.TextXAlignment = Enum.TextXAlignment.Left
 amtLabel.TextSize = 16
@@ -98,10 +88,10 @@ amtLabel.Font = Enum.Font.Gotham
 amtLabel.Parent = mainFrame
 
 local amtBox = Instance.new("TextBox")
-amtBox.Size = UDim2.new(0.52, 0, 0, 40)
-amtBox.Position = UDim2.new(0.43, 0, 0, 117)
+amtBox.Size = UDim2.new(0.5, 0, 0, 40)
+amtBox.Position = UDim2.new(0.45, 0, 0, 122)
 amtBox.Text = "1000000"
-amtBox.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
+amtBox.BackgroundColor3 = Color3.fromRGB(38, 38, 44)
 amtBox.TextColor3 = Color3.new(1,1,1)
 amtBox.TextSize = 18
 amtBox.Font = Enum.Font.Gotham
@@ -113,11 +103,11 @@ ac.Parent = amtBox
 
 -- Status
 local status = Instance.new("TextLabel")
-status.Size = UDim2.new(1, -30, 0, 45)
-status.Position = UDim2.new(0, 15, 0, 170)
+status.Size = UDim2.new(1, -30, 0, 50)
+status.Position = UDim2.new(0, 15, 0, 175)
 status.BackgroundColor3 = Color3.fromRGB(35, 35, 40)
-status.Text = "Equip a tool first..."
-status.TextColor3 = Color3.fromRGB(180, 180, 190)
+status.Text = "Equip the tool you want to dupe"
+status.TextColor3 = Color3.fromRGB(200, 200, 210)
 status.TextScaled = true
 status.Font = Enum.Font.Gotham
 status.Parent = mainFrame
@@ -126,139 +116,133 @@ local stc = Instance.new("UICorner")
 stc.CornerRadius = UDim.new(0, 12)
 stc.Parent = status
 
--- Scrolling Tool List (from ReplicatedStorage.Tools if available)
+-- Big Button
+local actionBtn = Instance.new("TextButton")
+actionBtn.Size = UDim2.new(1, -30, 0, 60)
+actionBtn.Position = UDim2.new(0, 15, 1, -85)
+actionBtn.BackgroundColor3 = Color3.fromRGB(0, 200, 110)
+actionBtn.Text = "SET AMOUNT & READY TO DROP"
+actionBtn.TextColor3 = Color3.new(1,1,1)
+actionBtn.TextScaled = true
+actionBtn.Font = Enum.Font.GothamBold
+actionBtn.Parent = mainFrame
+
+local bc = Instance.new("UICorner")
+bc.CornerRadius = UDim.new(0, 14)
+bc.Parent = actionBtn
+
+-- Tool list (optional reference)
 local scroll = Instance.new("ScrollingFrame")
-scroll.Size = UDim2.new(1, -30, 0, 170)
-scroll.Position = UDim2.new(0, 15, 0, 225)
+scroll.Size = UDim2.new(1, -30, 0, 140)
+scroll.Position = UDim2.new(0, 15, 0, 235)
 scroll.BackgroundTransparency = 1
-scroll.ScrollBarThickness = 6
-scroll.ScrollBarImageColor3 = Color3.fromRGB(80, 80, 90)
+scroll.ScrollBarThickness = 5
 scroll.CanvasSize = UDim2.new(0,0,0,0)
 scroll.Parent = mainFrame
 
 local layout = Instance.new("UIListLayout")
-layout.Padding = UDim.new(0, 8)
+layout.Padding = UDim.new(0, 7)
 layout.SortOrder = Enum.SortOrder.Name
 layout.Parent = scroll
 
--- Big Dupe Button
-local dupeBtn = Instance.new("TextButton")
-dupeBtn.Size = UDim2.new(1, -30, 0, 58)
-dupeBtn.Position = UDim2.new(0, 15, 1, -80)
-dupeBtn.BackgroundColor3 = Color3.fromRGB(0, 200, 100)
-dupeBtn.Text = "DUPE / SET STACK"
-dupeBtn.TextColor3 = Color3.new(1,1,1)
-dupeBtn.TextScaled = true
-dupeBtn.Font = Enum.Font.GothamBold
-dupeBtn.Parent = mainFrame
-
-local dbc = Instance.new("UICorner")
-dbc.CornerRadius = UDim.new(0, 14)
-dbc.Parent = dupeBtn
-
--- Variables
-local toolButtons = {}
-local selectedToolName = nil
-
--- Populate list from ReplicatedStorage.Tools (common in dupe GUIs)
+-- Populate from ReplicatedStorage.Tools if exists
 local toolsFolder = game.ReplicatedStorage:FindFirstChild("Tools")
+local toolBtns = {}
+
 if toolsFolder then
 	for _, tool in pairs(toolsFolder:GetChildren()) do
 		if tool:IsA("Tool") then
 			local btn = Instance.new("TextButton")
-			btn.Size = UDim2.new(1, 0, 0, 50)
-			btn.BackgroundColor3 = Color3.fromRGB(45, 45, 50)
-			btn.Text = "   " .. tool.Name
+			btn.Size = UDim2.new(1, 0, 0, 45)
+			btn.BackgroundColor3 = Color3.fromRGB(45, 45, 52)
+			btn.Text = "  " .. tool.Name
 			btn.TextColor3 = Color3.new(1,1,1)
 			btn.TextXAlignment = Enum.TextXAlignment.Left
 			btn.TextSize = 16
 			btn.Font = Enum.Font.Gotham
 			btn.Parent = scroll
 
-			local bc = Instance.new("UICorner")
-			bc.CornerRadius = UDim.new(0, 10)
-			bc.Parent = btn
+			local btnc = Instance.new("UICorner")
+			btnc.CornerRadius = UDim.new(0, 10)
+			btnc.Parent = btn
 
 			btn.MouseButton1Click:Connect(function()
-				for _, b in pairs(toolButtons) do
-					b.BackgroundColor3 = Color3.fromRGB(45, 45, 50)
-				end
-				btn.BackgroundColor3 = Color3.fromRGB(70, 130, 200)
-				selectedToolName = tool.Name
+				for _, b in pairs(toolBtns) do b.BackgroundColor3 = Color3.fromRGB(45,45,52) end
+				btn.BackgroundColor3 = Color3.fromRGB(70, 130, 210)
 			end)
-
-			table.insert(toolButtons, btn)
+			table.insert(toolBtns, btn)
 		end
 	end
 
 	layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-		scroll.CanvasSize = UDim2.new(0, 0, 0, layout.AbsoluteContentSize.Y + 30)
+		scroll.CanvasSize = UDim2.new(0,0,0, layout.AbsoluteContentSize.Y + 20)
 	end)
 end
 
 -- Live search
 searchBox:GetPropertyChangedSignal("Text"):Connect(function()
-	local query = searchBox.Text:lower()
-	for _, btn in pairs(toolButtons) do
-		btn.Visible = btn.Text:lower():find(query) ~= nil
+	local q = searchBox.Text:lower()
+	for _, btn in pairs(toolBtns) do
+		btn.Visible = btn.Text:lower():find(q) ~= nil
 	end
 end)
 
--- Dupe Logic (best working method: modify held tool's Amount)
-dupeBtn.MouseButton1Click:Connect(function()
+-- Main Action: Set Amount on held tool
+actionBtn.MouseButton1Click:Connect(function()
 	local amount = tonumber(amtBox.Text) or 1000000
 	if amount < 1 then amount = 1000000 end
 
 	local char = player.Character
-	if not char then 
-		status.Text = "No character found"
-		return 
-	end
-
-	local heldTool = char:FindFirstChildWhichIsA("Tool")
-	if not heldTool then
-		status.Text = "Equip the tool you want to dupe first!"
-		status.TextColor3 = Color3.fromRGB(255, 80, 80)
+	if not char then
+		status.Text = "No character!"
 		return
 	end
 
-	-- Create or update Amount
-	local amtVal = heldTool:FindFirstChild("Amount")
+	local held = char:FindFirstChildWhichIsA("Tool")
+	if not held then
+		status.Text = "Equip the tool first!"
+		status.TextColor3 = Color3.fromRGB(255, 90, 90)
+		return
+	end
+
+	local amtVal = held:FindFirstChild("Amount")
 	if not amtVal then
 		amtVal = Instance.new("IntValue")
 		amtVal.Name = "Amount"
-		amtVal.Parent = heldTool
+		amtVal.Parent = held
 	end
+
 	amtVal.Value = amount
 
-	status.Text = "Stack set to " .. amount .. " on " .. heldTool.Name
+	status.Text = "Amount set to " .. amount .. " on " .. held.Name .. "\nNow drop it manually!"
 	status.TextColor3 = Color3.fromRGB(0, 255, 140)
 
-	-- Flash button
-	local origColor = dupeBtn.BackgroundColor3
-	dupeBtn.BackgroundColor3 = Color3.fromRGB(0, 255, 160)
+	-- Button flash
+	local orig = actionBtn.BackgroundColor3
+	actionBtn.BackgroundColor3 = Color3.fromRGB(0, 255, 160)
 	task.wait(0.25)
-	dupeBtn.BackgroundColor3 = origColor
+	actionBtn.BackgroundColor3 = orig
 end)
 
--- Update status when equipping tool
-local function updateHeld()
+-- Auto status update
+local function updateStatus()
 	local char = player.Character
 	if char then
 		local tool = char:FindFirstChildWhichIsA("Tool")
 		if tool then
-			status.Text = "Held: " .. tool.Name
+			status.Text = "Held: " .. tool.Name .. "\nReady to set amount and drop"
 			status.TextColor3 = Color3.fromRGB(255, 255, 255)
 		else
-			status.Text = "Equip a tool first..."
-			status.TextColor3 = Color3.fromRGB(180, 180, 190)
+			status.Text = "Equip the tool you want to dupe"
+			status.TextColor3 = Color3.fromRGB(200, 200, 210)
 		end
 	end
 end
 
-player.Character.ChildAdded:Connect(updateHeld)
-player.Character.ChildRemoved:Connect(updateHeld)
-if player.Character then updateHeld() end
+if player.Character then updateStatus() end
+player.CharacterAdded:Connect(function() task.wait(1); updateStatus() end)
+player.Character.ChildAdded:Connect(updateStatus)
+player.Character.ChildRemoved:Connect(updateStatus)
 
 -- Draggable
 local dragging = false
@@ -285,4 +269,4 @@ UserInputService.InputEnded:Connect(function(input)
 	end
 end)
 
-print("Islands Dupe GUI loaded - Equip tool → Select from list or just use held tool → Set Amount")
+print("Islands Drop Dupe GUI loaded - Best client method: Equip tool → Set Amount → Manually drop it")
