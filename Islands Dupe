@@ -1,6 +1,3 @@
--- Islands Mobile Dupe GUI - Drop Style (iPhone XS optimized)
--- Inspired by "DROPING DUPE ITEMS" videos - Equip → Set Amount → Drop manually for best results
-
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 
