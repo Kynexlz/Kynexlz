@@ -1,0 +1,222 @@
+local Players = game:GetService("Players")
+local UIS = game:GetService("UserInputService")
+
+local player = Players.LocalPlayer
+local gui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
+gui.Name = "DexV3Pro"
+
+-- MAIN
+local main = Instance.new("Frame", gui)
+main.Size = UDim2.new(0, 650, 0, 400)
+main.Position = UDim2.new(0.5, -325, 0.5, -200)
+main.BackgroundColor3 = Color3.fromRGB(15,15,22)
+main.BorderSizePixel = 0
+Instance.new("UICorner", main).CornerRadius = UDim.new(0, 14)
+
+-- TITLE
+local titleBar = Instance.new("Frame", main)
+titleBar.Size = UDim2.new(1,0,0,40)
+titleBar.BackgroundColor3 = Color3.fromRGB(25,25,35)
+Instance.new("UICorner", titleBar).CornerRadius = UDim.new(0,14)
+
+local title = Instance.new("TextLabel", titleBar)
+title.Size = UDim2.new(1,0,1,0)
+title.Text = "Dex V3 Pro"
+title.BackgroundTransparency = 1
+title.TextColor3 = Color3.new(1,1,1)
+title.Font = Enum.Font.GothamBold
+title.TextSize = 18
+
+-- DRAG
+local dragging, startPos, startFramePos
+titleBar.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		dragging = true
+		startPos = input.Position
+		startFramePos = main.Position
+	end
+end)
+
+UIS.InputChanged:Connect(function(input)
+	if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+		local delta = input.Position - startPos
+		main.Position = UDim2.new(
+			startFramePos.X.Scale,
+			startFramePos.X.Offset + delta.X,
+			startFramePos.Y.Scale,
+			startFramePos.Y.Offset + delta.Y
+		)
+	end
+end)
+
+UIS.InputEnded:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		dragging = false
+	end
+end)
+
+-- SEARCH BAR
+local search = Instance.new("TextBox", main)
+search.PlaceholderText = "Search..."
+search.Size = UDim2.new(0.4, -10, 0, 30)
+search.Position = UDim2.new(0, 5, 0, 45)
+search.BackgroundColor3 = Color3.fromRGB(30,30,40)
+search.TextColor3 = Color3.new(1,1,1)
+Instance.new("UICorner", search).CornerRadius = UDim.new(0,8)
+
+-- PANELS
+local explorer = Instance.new("ScrollingFrame", main)
+explorer.Size = UDim2.new(0.4,0,1,-80)
+explorer.Position = UDim2.new(0,0,0,80)
+explorer.CanvasSize = UDim2.new(0,0,20,0)
+explorer.BackgroundTransparency = 1
+
+local properties = Instance.new("ScrollingFrame", main)
+properties.Size = UDim2.new(0.6,0,1,-80)
+properties.Position = UDim2.new(0.4,0,0,80)
+properties.BackgroundTransparency = 1
+
+local layout = Instance.new("UIListLayout", explorer)
+layout.Padding = UDim.new(0,4)
+
+local layout2 = Instance.new("UIListLayout", properties)
+layout2.Padding = UDim.new(0,4)
+
+-- SELECTION
+local selected = nil
+local selectionBox = Instance.new("SelectionBox")
+selectionBox.LineThickness = 0.05
+
+local function selectObject(obj)
+	selected = obj
+	selectionBox.Adornee = obj
+	selectionBox.Parent = obj
+end
+
+-- PROPERTIES
+local function clearProps()
+	for _,v in pairs(properties:GetChildren()) do
+		if v:IsA("Frame") then v:Destroy() end
+	end
+end
+
+local function addProperty(name, value, callback)
+	local frame = Instance.new("Frame", properties)
+	frame.Size = UDim2.new(1,-10,0,30)
+	frame.BackgroundColor3 = Color3.fromRGB(30,30,40)
+	Instance.new("UICorner", frame).CornerRadius = UDim.new(0,8)
+
+	local box = Instance.new("TextBox", frame)
+	box.Size = UDim2.new(1,0,1,0)
+	box.Text = name .. ": " .. tostring(value)
+	box.BackgroundTransparency = 1
+	box.TextColor3 = Color3.new(1,1,1)
+
+	box.FocusLost:Connect(function()
+		local newVal = box.Text:split(": ")[2]
+		callback(newVal)
+	end)
+end
+
+local function showProps(obj)
+	clearProps()
+
+	addProperty("Name", obj.Name, function(v)
+		obj.Name = v
+	end)
+
+	addProperty("Parent", obj.Parent and obj.Parent.Name or "nil", function()
+	end)
+
+	addProperty("Class", obj.ClassName, function()
+	end)
+
+	-- DELETE BUTTON
+	local del = Instance.new("TextButton", properties)
+	del.Size = UDim2.new(1,-10,0,30)
+	del.Text = "Delete Instance"
+	del.BackgroundColor3 = Color3.fromRGB(120,30,30)
+	del.TextColor3 = Color3.new(1,1,1)
+
+	del.MouseButton1Click:Connect(function()
+		if obj then obj:Destroy() end
+	end)
+end
+
+-- TREE SYSTEM
+local function createItem(obj, indent, parentTable)
+	parentTable = parentTable or explorer
+
+	local container = Instance.new("Frame", parentTable)
+	container.Size = UDim2.new(1,0,0,28)
+	container.BackgroundTransparency = 1
+
+	local button = Instance.new("TextButton", container)
+	button.Size = UDim2.new(1,-10,1,0)
+	button.Position = UDim2.new(0,10 * indent,0,0)
+	button.Text = obj.Name
+	button.BackgroundColor3 = Color3.fromRGB(28,28,38)
+	button.TextColor3 = Color3.new(1,1,1)
+	Instance.new("UICorner", button).CornerRadius = UDim.new(0,8)
+
+	local childrenFrame = Instance.new("Frame", container)
+	childrenFrame.Size = UDim2.new(1,0,0,0)
+	childrenFrame.Position = UDim2.new(0,0,1,0)
+	childrenFrame.BackgroundTransparency = 1
+
+	local layout = Instance.new("UIListLayout", childrenFrame)
+	layout.Padding = UDim.new(0,4)
+
+	local expanded = false
+
+	button.MouseButton1Click:Connect(function()
+		selectObject(obj)
+		showProps(obj)
+
+		expanded = not expanded
+		childrenFrame:ClearAllChildren()
+
+		if expanded then
+			for _,child in pairs(obj:GetChildren()) do
+				createItem(child, indent + 1, childrenFrame)
+			end
+		end
+	end)
+end
+
+-- LOAD ROOT
+for _,obj in pairs(game:GetChildren()) do
+	createItem(obj, 0)
+end
+
+-- SEARCH
+search:GetPropertyChangedSignal("Text"):Connect(function()
+	local txt = search.Text:lower()
+
+	for _,v in pairs(explorer:GetDescendants()) do
+		if v:IsA("TextButton") then
+			v.Visible = txt == "" or v.Text:lower():find(txt)
+		end
+	end
+end)
+
+-- CREATE BUTTON
+local createBtn = Instance.new("TextButton", main)
+createBtn.Size = UDim2.new(0.2, -10, 0, 30)
+createBtn.Position = UDim2.new(0.4, 5, 0, 45)
+createBtn.Text = "New Part"
+createBtn.BackgroundColor3 = Color3.fromRGB(40,120,40)
+createBtn.TextColor3 = Color3.new(1,1,1)
+
+createBtn.MouseButton1Click:Connect(function()
+	local part = Instance.new("Part")
+	part.Parent = workspace
+	part.Position = Vector3.new(0,5,0)
+end)
+
+-- TOGGLE (RightShift)
+UIS.InputBegan:Connect(function(input, gpe)
+	if not gpe and input.KeyCode == Enum.KeyCode.RightShift then
+		main.Visible = not main.Visible
+	end
+end)
