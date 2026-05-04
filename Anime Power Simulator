@@ -1,6 +1,6 @@
 local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/Kynexlz/KynLife/refs/heads/main/Source"))()
 
-local Window = Library:CreateWindow("Kynexlz Hub")
+local Window = Library:CreateWindow("APS Hub")
 
 local MainPage = Window:addPage("Main", 4, true, 6)
 local SettingsPage = Window:addPage("Settings", 4, false, 6)
@@ -21,12 +21,12 @@ MainPage:addToggle("Psychics", function(state)
     mode = state and 3 or nil
 end)
 
-MainPage:addToggle("Psychics", function(state)
-    mode = state and 3 or nil
-end)
-
 MainPage:addToggle("Magic", function(state)
     mode = state and 6 or nil
+end)
+
+MainPage:addToggle("Meele", function(state)
+    mode = state and 7 or nil
 end)
 
 task.spawn(function()
