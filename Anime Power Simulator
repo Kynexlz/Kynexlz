@@ -3,11 +3,12 @@ local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/Kynex
 local Window = Library:CreateWindow("APS Hub")
 
 local MainPage = Window:addPage("Main", 4, true, 6)
-local SettingsPage = Window:addPage("Settings", 4, false, 6)
+local SettingsPage = Window:addPage("Utility", 4, false, 6)
 
-MainPage:addLabel("Label")
+MainPage:addLabel("Auto Grind")
 
 local mode = nil
+local mobilityEnabled = false -- new toggle state
 
 MainPage:addToggle("Strength", function(state)
     mode = state and 1 or nil
@@ -29,6 +30,15 @@ MainPage:addToggle("Meele", function(state)
     mode = state and 7 or nil
 end)
 
+MainPage:addToggle("Aura", function(state)
+    mode = state and 8 or nil
+end)
+
+-- NEW TOGGLE
+MainPage:addToggle("Mobility", function(state)
+    mobilityEnabled = state
+end)
+
 task.spawn(function()
     while true do
         if mode then
@@ -37,6 +47,14 @@ task.spawn(function()
                 :WaitForChild("TrainSignal")
                 :FireServer(mode)
         end
+
+        if mobilityEnabled then
+            game:GetService("ReplicatedStorage")
+                :WaitForChild("Events")
+                :WaitForChild("TriggerMobility")
+                :FireServer()
+        end
+
         task.wait()
     end
 end)
