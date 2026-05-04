@@ -1,0 +1,42 @@
+local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/Kynexlz/KynLife/refs/heads/main/Source"))()
+
+local Window = Library:CreateWindow("Kynexlz Hub")
+
+local MainPage = Window:addPage("Main", 4, true, 6)
+local SettingsPage = Window:addPage("Settings", 4, false, 6)
+
+MainPage:addLabel("Label")
+
+local mode = nil
+
+MainPage:addToggle("Strength", function(state)
+    mode = state and 1 or nil
+end)
+
+MainPage:addToggle("Health", function(state)
+    mode = state and 2 or nil
+end)
+
+MainPage:addToggle("Psychics", function(state)
+    mode = state and 3 or nil
+end)
+
+MainPage:addToggle("Psychics", function(state)
+    mode = state and 3 or nil
+end)
+
+MainPage:addToggle("Magic", function(state)
+    mode = state and 6 or nil
+end)
+
+task.spawn(function()
+    while true do
+        if mode then
+            game:GetService("ReplicatedStorage")
+                :WaitForChild("Events")
+                :WaitForChild("TrainSignal")
+                :FireServer(mode)
+        end
+        task.wait()
+    end
+end)
