@@ -1,0 +1,80 @@
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
+local Window = Rayfield:CreateWindow({
+    Name = "Riot City",
+    LoadingTitle = "loading...",
+    LoadingSubtitle = "by Kynexlz",
+    ConfigurationSaving = {
+        Enabled = false
+    },
+    Discord = {
+        Enabled = false
+    },
+    KeySystem = false
+})
+
+local Teleports = Window:CreateTab("Teleports", 4483362458)
+
+-- Bank
+Teleports:CreateButton({
+    Name = "Teleport to Bank",
+    Callback = function()
+        local player = game.Players.LocalPlayer
+        if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            player.Character.HumanoidRootPart.CFrame = CFrame.new(
+                671.561096, -11.0258064, -1242.79565,
+                0.965929627, 0, 0.258804798,
+                0, 1, 0,
+                -0.258804798, 0, 0.965929627
+            )
+        end
+    end
+})
+
+-- Criminal Base
+Teleports:CreateButton({
+    Name = "Teleport to Criminal Base",
+    Callback = function()
+        local player = game.Players.LocalPlayer
+        if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            player.Character.HumanoidRootPart.CFrame = CFrame.new(
+                324.863403, 8.95670605, -2961.38354,
+                -0.258864403, 0, 0.965913713,
+                0, 1, 0,
+                -0.965913713, 0, -0.258864403
+            )
+        end
+    end
+})
+
+-- Mansion
+Teleports:CreateButton({
+    Name = "Teleport to Mansion",
+    Callback = function()
+        local player = game.Players.LocalPlayer
+        if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            player.Character.HumanoidRootPart.CFrame = CFrame.new(
+                348.085693, 16.0995522, -2449.27832,
+                0.965929627, 0, 0.258804798,
+                0, 1, 0,
+                -0.258804798, 0, 0.965929627
+            )
+        end
+    end
+})
+
+-- Jewlery
+Teleports:CreateButton({
+    Name = "Teleport to Jewlery Store",
+    Callback = function()
+        local player = game.Players.LocalPlayer
+        if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            player.Character.HumanoidRootPart.CFrame = CFrame.new(
+                308.527557, -35.3620453, -1625.59778,
+                0.965929627, 0, 0.258804798,
+                0, 1, 0,
+                -0.258804798, 0, 0.965929627
+            )
+        end
+    end
+})
