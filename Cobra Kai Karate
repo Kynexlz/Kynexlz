@@ -1,0 +1,154 @@
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
+local Window = Rayfield:CreateWindow({
+    Name = "Cobra Kai Karate",
+    LoadingTitle = "Cobra Kai Karate",
+    LoadingSubtitle = "5xscripts"
+})
+
+local MainTab = Window:CreateTab("Main", 4483362458)
+
+local LeftPunchEnabled = false
+local RightPunchEnabled = false
+local PunchDelay = 0.1 -- Lower = Faster
+
+MainTab:CreateSlider({
+    Name = "Punch Speed",
+    Range = {0.01, 1},
+    Increment = 0.01,
+    Suffix = "s",
+    CurrentValue = 0.1,
+    Flag = "PunchSpeed",
+    Callback = function(Value)
+        PunchDelay = Value
+    end,
+})
+
+MainTab:CreateToggle({
+    Name = "Left Punch",
+    CurrentValue = false,
+    Flag = "LeftPunch",
+    Callback = function(Value)
+        LeftPunchEnabled = Value
+
+        if Value then
+            task.spawn(function()
+                while LeftPunchEnabled do
+                    game:GetService("ReplicatedStorage")
+                        :WaitForChild("Remotes")
+                        :WaitForChild("LeftPunch")
+                        :FireServer()
+
+                    task.wait(PunchDelay)
+                end
+            end)
+        end
+    end
+})
+
+MainTab:CreateToggle({
+    Name = "Right Punch",
+    CurrentValue = false,
+    Flag = "RightPunch",
+    Callback = function(Value)
+        RightPunchEnabled = Value
+
+        if Value then
+            task.spawn(function()
+                while RightPunchEnabled do
+                    game:GetService("ReplicatedStorage")
+                        :WaitForChild("Remotes")
+                        :WaitForChild("RightPunch")
+                        :FireServer()
+
+                    task.wait(PunchDelay)
+                end
+            end)
+        end
+    end
+})
+
+local HealthTab = Window:CreateTab("Health", 4483362458)
+
+local PushUpEnabled = false
+local PushUpDelay = 0.1
+
+HealthTab:CreateSlider({
+    Name = "Push Up Speed",
+    Range = {0.01, 1},
+    Increment = 0.01,
+    Suffix = "s",
+    CurrentValue = 0.1,
+    Flag = "PushUpSpeed",
+    Callback = function(Value)
+        PushUpDelay = Value
+    end,
+})
+
+HealthTab:CreateToggle({
+    Name = "Push Up",
+    CurrentValue = false,
+    Flag = "PushUpToggle",
+    Callback = function(Value)
+        PushUpEnabled = Value
+
+        if Value then
+            task.spawn(function()
+                while PushUpEnabled do
+                    local args = {
+                        "Animations",
+                        "PushUp"
+                    }
+
+                    game:GetService("ReplicatedStorage")
+                        :WaitForChild("ActionEvent")
+                        :FireServer(unpack(args))
+
+                    task.wait(PushUpDelay)
+                end
+            end)
+        end
+    end
+})
+
+local SitUpEnabled = false
+local SitUpDelay = 0.1
+
+HealthTab:CreateSlider({
+    Name = "Stamina Speed",
+    Range = {0.01, 1},
+    Increment = 0.01,
+    Suffix = "s",
+    CurrentValue = 0.1,
+    Flag = "StaminaSpeed",
+    Callback = function(Value)
+        SitUpDelay = Value
+    end,
+})
+
+HealthTab:CreateToggle({
+    Name = "Stamina",
+    CurrentValue = false,
+    Flag = "StaminaToggle",
+    Callback = function(Value)
+        SitUpEnabled = Value
+
+        if Value then
+            task.spawn(function()
+                while SitUpEnabled do
+                    local args = {
+                        "Animations",
+                        "SitUp"
+                    }
+
+                    game:GetService("ReplicatedStorage")
+                        :WaitForChild("ActionEvent")
+                        :FireServer(unpack(args))
+
+                    task.wait(SitUpDelay)
+                end
+            end)
+        end
+    end
+})
+
