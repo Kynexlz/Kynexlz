@@ -1,154 +1,177 @@
-local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+-- Bench Auto-Fire Script with Mobile GUI (Start/Stop + Speed Control)
+-- Compatible with DELTA, FLUXUS, SYNAPSE, XENO
+-- Place this LocalScript in StarterPlayerScripts
 
-local Window = Rayfield:CreateWindow({
-    Name = "Cobra Kai Karate",
-    LoadingTitle = "Cobra Kai Karate",
-    LoadingSubtitle = "5xscripts"
-})
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Players = game:GetService("Players")
+local Player = Players.LocalPlayer
+local PlayerGui = Player:WaitForChild("PlayerGui")
 
-local MainTab = Window:CreateTab("Main", 4483362458)
+local Bench = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("Bench")
 
-local LeftPunchEnabled = false
-local RightPunchEnabled = false
-local PunchDelay = 0.1 -- Lower = Faster
+-- Variables
+local firing = false
+local fireSpeed = 0.01 -- default delay in seconds
 
-MainTab:CreateSlider({
-    Name = "Punch Speed",
-    Range = {0.01, 1},
-    Increment = 0.01,
-    Suffix = "s",
-    CurrentValue = 0.1,
-    Flag = "PunchSpeed",
-    Callback = function(Value)
-        PunchDelay = Value
-    end,
-})
+-- Create ScreenGui
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "BenchAutoFireGui"
+screenGui.ResetOnSpawn = false
+screenGui.Parent = PlayerGui
 
-MainTab:CreateToggle({
-    Name = "Left Punch",
-    CurrentValue = false,
-    Flag = "LeftPunch",
-    Callback = function(Value)
-        LeftPunchEnabled = Value
+-- Main Frame
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, 220, 0, 140)
+frame.Position = UDim2.new(0.5, -110, 0.8, 0)
+frame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+frame.BorderSizePixel = 0
+frame.BackgroundTransparency = 0.3
+frame.Parent = screenGui
 
-        if Value then
-            task.spawn(function()
-                while LeftPunchEnabled do
-                    game:GetService("ReplicatedStorage")
-                        :WaitForChild("Remotes")
-                        :WaitForChild("LeftPunch")
-                        :FireServer()
+-- UI Corner
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0, 10)
+corner.Parent = frame
 
-                    task.wait(PunchDelay)
-                end
-            end)
-        end
+-- Title Label
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, 0, 0, 30)
+title.BackgroundTransparency = 1
+title.Text = "Bench Auto-Fire"
+title.TextColor3 = Color3.fromRGB(255, 255, 255)
+title.Font = Enum.Font.SourceSansBold
+title.TextSize = 20
+title.Parent = frame
+
+-- Start/Stop Button
+local toggleButton = Instance.new("TextButton")
+toggleButton.Size = UDim2.new(0.9, 0, 0, 40)
+toggleButton.Position = UDim2.new(0.05, 0, 0.3, 0)
+toggleButton.BackgroundColor3 = Color3.fromRGB(50, 150, 50)
+toggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+toggleButton.Font = Enum.Font.SourceSansBold
+toggleButton.TextSize = 22
+toggleButton.Text = "Start"
+toggleButton.Parent = frame
+
+local function updateToggleButton()
+    if firing then
+        toggleButton.Text = "Stop"
+        toggleButton.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
+    else
+        toggleButton.Text = "Start"
+        toggleButton.BackgroundColor3 = Color3.fromRGB(50, 150, 50)
     end
-})
+end
 
-MainTab:CreateToggle({
-    Name = "Right Punch",
-    CurrentValue = false,
-    Flag = "RightPunch",
-    Callback = function(Value)
-        RightPunchEnabled = Value
+-- Speed Slider Frame
+local sliderFrame = Instance.new("Frame")
+sliderFrame.Size = UDim2.new(0.9, 0, 0, 30)
+sliderFrame.Position = UDim2.new(0.05, 0, 0.65, 0)
+sliderFrame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+sliderFrame.BorderSizePixel = 0
+sliderFrame.Parent = frame
 
-        if Value then
-            task.spawn(function()
-                while RightPunchEnabled do
-                    game:GetService("ReplicatedStorage")
-                        :WaitForChild("Remotes")
-                        :WaitForChild("RightPunch")
-                        :FireServer()
+local sliderCorner = Instance.new("UICorner")
+sliderCorner.CornerRadius = UDim.new(0, 6)
+sliderCorner.Parent = sliderFrame
 
-                    task.wait(PunchDelay)
-                end
-            end)
-        end
+-- Slider Fill
+local sliderFill = Instance.new("Frame")
+sliderFill.Size = UDim2.new(0.5, 0, 1, 0) -- default 50%
+sliderFill.BackgroundColor3 = Color3.fromRGB(100, 200, 100)
+sliderFill.Parent = sliderFrame
+
+-- Slider Button
+local sliderButton = Instance.new("ImageButton")
+sliderButton.Size = UDim2.new(0, 24, 0, 30)
+sliderButton.Position = UDim2.new(0.5, -12, 0, 0)
+sliderButton.BackgroundColor3 = Color3.fromRGB(200, 200, 200)
+sliderButton.BorderSizePixel = 0
+sliderButton.Parent = sliderFrame
+
+-- Speed Label
+local speedLabel = Instance.new("TextLabel")
+speedLabel.Size = UDim2.new(1, 0, 0, 20)
+speedLabel.Position = UDim2.new(0, 0, 1, 2)
+speedLabel.BackgroundTransparency = 1
+speedLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+speedLabel.Font = Enum.Font.SourceSans
+speedLabel.TextSize = 16
+speedLabel.Text = "Speed: 0.010 sec"
+speedLabel.Parent = sliderFrame
+
+-- Variables for slider
+local sliderDragging = false
+local minSpeed = 0.001 -- fastest (1 ms)
+local maxSpeed = 0.1   -- slowest (100 ms)
+
+-- Update speed based on slider position
+local function updateSpeedFromSlider(xPos)
+    local relativeX = math.clamp(xPos - sliderFrame.AbsolutePosition.X, 0, sliderFrame.AbsoluteSize.X)
+    local percent = relativeX / sliderFrame.AbsoluteSize.X
+    sliderFill.Size = UDim2.new(percent, 0, 1, 0)
+    sliderButton.Position = UDim2.new(percent, -12, 0, 0)
+    fireSpeed = minSpeed + (maxSpeed - minSpeed) * (1 - percent) -- inverted: left = slow, right = fast
+    speedLabel.Text = string.format("Speed: %.3f sec", fireSpeed)
+end
+
+-- Mouse input for slider
+sliderButton.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        sliderDragging = true
     end
-})
+end)
 
-local HealthTab = Window:CreateTab("Health", 4483362458)
-
-local PushUpEnabled = false
-local PushUpDelay = 0.1
-
-HealthTab:CreateSlider({
-    Name = "Push Up Speed",
-    Range = {0.01, 1},
-    Increment = 0.01,
-    Suffix = "s",
-    CurrentValue = 0.1,
-    Flag = "PushUpSpeed",
-    Callback = function(Value)
-        PushUpDelay = Value
-    end,
-})
-
-HealthTab:CreateToggle({
-    Name = "Push Up",
-    CurrentValue = false,
-    Flag = "PushUpToggle",
-    Callback = function(Value)
-        PushUpEnabled = Value
-
-        if Value then
-            task.spawn(function()
-                while PushUpEnabled do
-                    local args = {
-                        "Animations",
-                        "PushUp"
-                    }
-
-                    game:GetService("ReplicatedStorage")
-                        :WaitForChild("ActionEvent")
-                        :FireServer(unpack(args))
-
-                    task.wait(PushUpDelay)
-                end
-            end)
-        end
+sliderButton.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        sliderDragging = false
     end
-})
+end)
 
-local SitUpEnabled = false
-local SitUpDelay = 0.1
-
-HealthTab:CreateSlider({
-    Name = "Stamina Speed",
-    Range = {0.01, 1},
-    Increment = 0.01,
-    Suffix = "s",
-    CurrentValue = 0.1,
-    Flag = "StaminaSpeed",
-    Callback = function(Value)
-        SitUpDelay = Value
-    end,
-})
-
-HealthTab:CreateToggle({
-    Name = "Stamina",
-    CurrentValue = false,
-    Flag = "StaminaToggle",
-    Callback = function(Value)
-        SitUpEnabled = Value
-
-        if Value then
-            task.spawn(function()
-                while SitUpEnabled do
-                    local args = {
-                        "Animations",
-                        "SitUp"
-                    }
-
-                    game:GetService("ReplicatedStorage")
-                        :WaitForChild("ActionEvent")
-                        :FireServer(unpack(args))
-
-                    task.wait(SitUpDelay)
-                end
-            end)
-        end
+game:GetService("UserInputService").InputChanged:Connect(function(input)
+    if sliderDragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+        updateSpeedFromSlider(input.Position.X)
+    elseif sliderDragging and input.UserInputType == Enum.UserInputType.Touch then
+        updateSpeedFromSlider(input.Position.X)
     end
-})
+end)
 
+-- Touch support for slider frame (for mobile)
+sliderFrame.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.Touch then
+        sliderDragging = true
+        updateSpeedFromSlider(input.Position.X)
+    end
+end)
+
+sliderFrame.InputChanged:Connect(function(input)
+    if sliderDragging and input.UserInputType == Enum.UserInputType.Touch then
+        updateSpeedFromSlider(input.Position.X)
+    end
+end)
+
+sliderFrame.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.Touch then
+        sliderDragging = false
+    end
+end)
+
+-- Toggle button logic
+toggleButton.MouseButton1Click:Connect(function()
+    firing = not firing
+    updateToggleButton()
+end)
+
+updateToggleButton()
+
+-- Auto-fire loop
+spawn(function()
+    while true do
+        if firing then
+            -- Fire with argument false as per reference script
+            Bench:FireServer(false)
+        end
+        task.wait(fireSpeed)
+    end
+end)
