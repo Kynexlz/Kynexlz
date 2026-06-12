@@ -20,7 +20,7 @@ screenGui.Parent = PlayerGui
 -- Main Frame
 local frame = Instance.new("Frame")
 frame.Size = UDim2.new(0, 220, 0, 140)
-frame.Position = UDim2.new(0.5, -110, 0.8, 0)
+frame.Position = UDim2.new(0.5, -110, 0.5, -70) -- Centered on screen
 frame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
 frame.BorderSizePixel = 0
 frame.BackgroundTransparency = 0.3
@@ -31,7 +31,7 @@ local corner = Instance.new("UICorner")
 corner.CornerRadius = UDim.new(0, 10)
 corner.Parent = frame
 
--- Title Label
+-- Title Label (Drag Handle)
 local title = Instance.new("TextLabel")
 title.Size = UDim2.new(1, 0, 0, 30)
 title.BackgroundTransparency = 1
@@ -40,6 +40,8 @@ title.TextColor3 = Color3.fromRGB(255, 255, 255)
 title.Font = Enum.Font.SourceSansBold
 title.TextSize = 20
 title.Parent = frame
+title.Active = true -- Enable input capture for dragging
+title.Selectable = true
 
 -- Start/Stop Button
 local toggleButton = Instance.new("TextButton")
@@ -114,7 +116,7 @@ local function updateSpeedFromSlider(xPos)
     speedLabel.Text = string.format("Speed: %.3f sec", fireSpeed)
 end
 
--- Mouse input for slider
+-- Slider input handlers
 sliderButton.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
         sliderDragging = true
@@ -127,13 +129,12 @@ sliderButton.InputEnded:Connect(function(input)
     end
 end)
 
-game:GetService("UserInputService").InputChanged:Connect(function(input)
+UserInputService.InputChanged:Connect(function(input)
     if sliderDragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
         updateSpeedFromSlider(input.Position.X)
     end
 end)
 
--- Touch support for slider frame (for mobile)
 sliderFrame.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.Touch then
         sliderDragging = true
@@ -165,30 +166,31 @@ updateToggleButton()
 spawn(function()
     while true do
         if firing then
-            -- Fire with argument false as per reference script
             Bench:FireServer(false)
         end
         task.wait(fireSpeed)
     end
 end)
 
--- Draggable functionality
+-- Draggable functionality for the whole frame using the title label as drag handle
 local dragging = false
-local dragInput
-local dragStart
-local startPos
+local dragInput = nil
+local dragStart = nil
+local startPos = nil
 
 local function updateDrag(input)
     local delta = input.Position - dragStart
-    frame.Position = UDim2.new(
-        math.clamp(startPos.X.Scale, 0, 1),
-        math.clamp(startPos.X.Offset + delta.X, 0, workspace.CurrentCamera.ViewportSize.X - frame.AbsoluteSize.X),
-        math.clamp(startPos.Y.Scale, 0, 1),
-        math.clamp(startPos.Y.Offset + delta.Y, 0, workspace.CurrentCamera.ViewportSize.Y - frame.AbsoluteSize.Y)
-    )
+    local newX = startPos.X.Offset + delta.X
+    local newY = startPos.Y.Offset + delta.Y
+
+    -- Clamp to screen bounds
+    local screenSize = workspace.CurrentCamera.ViewportSize
+    newX = math.clamp(newX, 0, screenSize.X - frame.AbsoluteSize.X)
+    newY = math.clamp(newY, 0, screenSize.Y - frame.AbsoluteSize.Y)
+
+    frame.Position = UDim2.new(0, newX, 0, newY)
 end
 
--- Use the title label as the drag handle
 title.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
         dragging = true
