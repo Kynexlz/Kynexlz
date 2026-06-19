@@ -11,23 +11,26 @@ GamepassPage:addLabel("Gamepass Training")
 -- STATES
 local pushupsEnabled = false
 local situpsEnabled = false
+local blackbagsEnabled = false
+
 local benchEnabled = false
 local dumbbellEnabled = false
-local blackbagsEnabled = false
 
 -- SPEEDS (1–100)
 local pushupsSpeed = 50
 local situpsSpeed = 50
+local blackbagsSpeed = 50
 local benchSpeed = 50
 local dumbbellSpeed = 50
-local blackbagsSpeed = 50
 
--- SPEED CONVERSION
+-- SPEED CONVERTER (1 = slow, 100 = fast)
 local function getDelay(speed)
     return math.clamp(1 - (speed / 100), 0.01, 1)
 end
 
+------------------------------------------------
 -- MAIN PAGE
+------------------------------------------------
 
 MainPage:addToggle("PushUps", function(state)
     pushupsEnabled = state
@@ -45,7 +48,7 @@ MainPage:addTextbox("SitUps Speed (1-100)", "50", function(text)
     situpsSpeed = tonumber(text) or 50
 end)
 
--- BLACK BAGS (NEW)
+-- BLACK BAGS
 MainPage:addToggle("Black Bags", function(state)
     blackbagsEnabled = state
 end)
@@ -54,7 +57,9 @@ MainPage:addTextbox("Black Bags Speed (1-100)", "50", function(text)
     blackbagsSpeed = tonumber(text) or 50
 end)
 
+------------------------------------------------
 -- GAMEPASS PAGE
+------------------------------------------------
 
 GamepassPage:addToggle("BenchPress", function(state)
     benchEnabled = state
@@ -72,7 +77,10 @@ GamepassPage:addTextbox("Dumbbell Speed (1-100)", "50", function(text)
     dumbbellSpeed = tonumber(text) or 50
 end)
 
+------------------------------------------------
 -- LOOP
+------------------------------------------------
+
 task.spawn(function()
     while true do
 
@@ -92,6 +100,14 @@ task.spawn(function()
             task.wait(getDelay(situpsSpeed))
         end
 
+        if blackbagsEnabled then
+            game:GetService("ReplicatedStorage")
+                .Remotes
+                .DoubleReg
+                :FireServer("{}")
+            task.wait(getDelay(blackbagsSpeed))
+        end
+
         if benchEnabled then
             game:GetService("ReplicatedStorage")
                 .Remotes
@@ -106,15 +122,6 @@ task.spawn(function()
                 .Dumbell
                 :FireServer("{}")
             task.wait(getDelay(dumbbellSpeed))
-        end
-
-        -- BLACK BAGS (FIXED VERSION)
-        if blackbagsEnabled then
-            game:GetService("ReplicatedStorage")
-                .Remotes
-                .DoubleReg
-                :FireServer("{}")
-            task.wait(getDelay(blackbagsSpeed))
         end
 
         task.wait(0.05)
