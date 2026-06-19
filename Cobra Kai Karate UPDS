@@ -8,14 +8,15 @@ local GamepassPage = Window:addPage("Gamepass", 4, false, 6)
 MainPage:addLabel("Auto Training")
 GamepassPage:addLabel("Gamepass Training")
 
+------------------------------------------------
 -- STATES
+------------------------------------------------
 local pushupsEnabled = false
 local situpsEnabled = false
 local blackbagsEnabled = false
 local benchEnabled = false
 local dumbbellEnabled = false
 
--- SPEEDS
 local pushupsSpeed = 50
 local situpsSpeed = 50
 local blackbagsSpeed = 50
@@ -26,83 +27,89 @@ local function getDelay(speed)
     return math.clamp(1 - (speed / 100), 0.01, 1)
 end
 
-------------------------------------------------
--- MAIN PAGE
-------------------------------------------------
-
-MainPage:addToggle("PushUps", function(state)
-    pushupsEnabled = state
-end)
-
-MainPage:addTextBox("PushUps Speed (1-100)", "50", function(text)
-    pushupsSpeed = tonumber(text) or 50
-end)
-
-MainPage:addToggle("SitUps", function(state)
-    situpsEnabled = state
-end)
-
-MainPage:addTextBox("SitUps Speed (1-100)", "50", function(text)
-    situpsSpeed = tonumber(text) or 50
-end)
-
-MainPage:addToggle("Black Bags", function(state)
-    blackbagsEnabled = state
-end)
-
-MainPage:addTextBox("Black Bags Speed (1-100)", "50", function(text)
-    blackbagsSpeed = tonumber(text) or 50
-end)
+local function safeFire(path)
+    pcall(function()
+        path:FireServer("{}")
+    end)
+end
 
 ------------------------------------------------
--- GAMEPASS PAGE
+-- MAIN
 ------------------------------------------------
 
-GamepassPage:addToggle("BenchPress", function(state)
-    benchEnabled = state
+MainPage:addToggle("PushUps", function(v)
+    pushupsEnabled = v
 end)
 
-GamepassPage:addTextBox("Bench Speed (1-100)", "50", function(text)
-    benchSpeed = tonumber(text) or 50
+MainPage:addTextBox("PushUps Speed (1-100)", "50", function(t)
+    pushupsSpeed = tonumber(t) or 50
 end)
 
-GamepassPage:addToggle("Dumbbell", function(state)
-    dumbbellEnabled = state
+MainPage:addToggle("SitUps", function(v)
+    situpsEnabled = v
 end)
 
-GamepassPage:addTextBox("Dumbbell Speed (1-100)", "50", function(text)
-    dumbbellSpeed = tonumber(text) or 50
+MainPage:addTextBox("SitUps Speed (1-100)", "50", function(t)
+    situpsSpeed = tonumber(t) or 50
+end)
+
+MainPage:addToggle("Black Bags", function(v)
+    blackbagsEnabled = v
+end)
+
+MainPage:addTextBox("Black Bags Speed (1-100)", "50", function(t)
+    blackbagsSpeed = tonumber(t) or 50
 end)
 
 ------------------------------------------------
--- LOOP
+-- GAMEPASS
+------------------------------------------------
+
+GamepassPage:addToggle("BenchPress", function(v)
+    benchEnabled = v
+end)
+
+GamepassPage:addTextBox("Bench Speed (1-100)", "50", function(t)
+    benchSpeed = tonumber(t) or 50
+end)
+
+GamepassPage:addToggle("Dumbbell", function(v)
+    dumbbellEnabled = v
+end)
+
+GamepassPage:addTextBox("Dumbbell Speed (1-100)", "50", function(t)
+    dumbbellSpeed = tonumber(t) or 50
+end)
+
+------------------------------------------------
+-- LOOP (SAFE)
 ------------------------------------------------
 
 task.spawn(function()
     while true do
 
         if pushupsEnabled then
-            game:GetService("ReplicatedStorage").Remotes.PushUp:FireServer("{}")
+            safeFire(game:GetService("ReplicatedStorage").Remotes.PushUp)
             task.wait(getDelay(pushupsSpeed))
         end
 
         if situpsEnabled then
-            game:GetService("ReplicatedStorage").Remotes.SitUp:FireServer("{}")
+            safeFire(game:GetService("ReplicatedStorage").Remotes.SitUp)
             task.wait(getDelay(situpsSpeed))
         end
 
         if blackbagsEnabled then
-            game:GetService("ReplicatedStorage").Remotes.DoubleReg:FireServer("{}")
+            safeFire(game:GetService("ReplicatedStorage").Remotes.DoubleReg)
             task.wait(getDelay(blackbagsSpeed))
         end
 
         if benchEnabled then
-            game:GetService("ReplicatedStorage").Remotes.Bench:FireServer("{}")
+            safeFire(game:GetService("ReplicatedStorage").Remotes.Bench)
             task.wait(getDelay(benchSpeed))
         end
 
         if dumbbellEnabled then
-            game:GetService("ReplicatedStorage").Remotes.Dumbell:FireServer("{}")
+            safeFire(game:GetService("ReplicatedStorage").Remotes.Dumbell)
             task.wait(getDelay(dumbbellSpeed))
         end
 
