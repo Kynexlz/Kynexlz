@@ -1,0 +1,90 @@
+local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/Kynexlz/KynLife/refs/heads/main/Source"))()
+
+local Window = Library:CreateWindow("Training Hub")
+
+local MainPage = Window:addPage("Main", 4, true, 6)
+local GamepassPage = Window:addPage("Gamepass", 4, false, 6)
+
+MainPage:addLabel("Auto Training")
+GamepassPage:addLabel("Gamepass Training")
+
+local pushupsEnabled = false
+local situpsEnabled = false
+local benchEnabled = false
+local dumbbellEnabled = false
+
+local pushupsDelay = 1
+local situpsDelay = 1
+local benchDelay = 1
+local dumbbellDelay = 1
+
+MainPage:addToggle("PushUps", function(state)
+    pushupsEnabled = state
+end)
+
+MainPage:addSlider("PushUps Speed", 0.1, 5, function(value)
+    pushupsDelay = value
+end)
+
+MainPage:addToggle("SitUps", function(state)
+    situpsEnabled = state
+end)
+
+MainPage:addSlider("SitUps Speed", 0.1, 5, function(value)
+    situpsDelay = value
+end)
+
+GamepassPage:addToggle("BenchPress", function(state)
+    benchEnabled = state
+end)
+
+GamepassPage:addSlider("Bench Speed", 0.1, 5, function(value)
+    benchDelay = value
+end)
+
+GamepassPage:addToggle("Dumbbell", function(state)
+    dumbbellEnabled = state
+end)
+
+GamepassPage:addSlider("Dumbbell Speed", 0.1, 5, function(value)
+    dumbbellDelay = value
+end)
+
+task.spawn(function()
+    while true do
+
+        if pushupsEnabled then
+            game:GetService("ReplicatedStorage")
+                .Remotes
+                .PushUp
+                :FireServer("{}")
+            task.wait(pushupsDelay)
+        end
+
+        if situpsEnabled then
+            game:GetService("ReplicatedStorage")
+                .Remotes
+                .SitUp
+                :FireServer("{}")
+            task.wait(situpsDelay)
+        end
+
+        if benchEnabled then
+            game:GetService("ReplicatedStorage")
+                .Remotes
+                .Bench
+                :FireServer("{}")
+            task.wait(benchDelay)
+        end
+
+        if dumbbellEnabled then
+            game:GetService("ReplicatedStorage")
+                .Remotes
+                .Dumbell
+                :FireServer("{}")
+            task.wait(dumbbellDelay)
+        end
+
+        task.wait(0.1)
+    end
+end)
