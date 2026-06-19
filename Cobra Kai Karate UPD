@@ -8,48 +8,71 @@ local GamepassPage = Window:addPage("Gamepass", 4, false, 6)
 MainPage:addLabel("Auto Training")
 GamepassPage:addLabel("Gamepass Training")
 
+-- STATES
 local pushupsEnabled = false
 local situpsEnabled = false
 local benchEnabled = false
 local dumbbellEnabled = false
+local blackbagsEnabled = false
 
-local pushupsDelay = 1
-local situpsDelay = 1
-local benchDelay = 1
-local dumbbellDelay = 1
+-- SPEEDS (1–100)
+local pushupsSpeed = 50
+local situpsSpeed = 50
+local benchSpeed = 50
+local dumbbellSpeed = 50
+local blackbagsSpeed = 50
+
+-- SPEED CONVERSION
+local function getDelay(speed)
+    return math.clamp(1 - (speed / 100), 0.01, 1)
+end
+
+-- MAIN PAGE
 
 MainPage:addToggle("PushUps", function(state)
     pushupsEnabled = state
 end)
 
-MainPage:addSlider("PushUps Speed", 0.1, 5, function(value)
-    pushupsDelay = value
+MainPage:addTextbox("PushUps Speed (1-100)", "50", function(text)
+    pushupsSpeed = tonumber(text) or 50
 end)
 
 MainPage:addToggle("SitUps", function(state)
     situpsEnabled = state
 end)
 
-MainPage:addSlider("SitUps Speed", 0.1, 5, function(value)
-    situpsDelay = value
+MainPage:addTextbox("SitUps Speed (1-100)", "50", function(text)
+    situpsSpeed = tonumber(text) or 50
 end)
+
+-- BLACK BAGS (NEW)
+MainPage:addToggle("Black Bags", function(state)
+    blackbagsEnabled = state
+end)
+
+MainPage:addTextbox("Black Bags Speed (1-100)", "50", function(text)
+    blackbagsSpeed = tonumber(text) or 50
+end)
+
+-- GAMEPASS PAGE
 
 GamepassPage:addToggle("BenchPress", function(state)
     benchEnabled = state
 end)
 
-GamepassPage:addSlider("Bench Speed", 0.1, 5, function(value)
-    benchDelay = value
+GamepassPage:addTextbox("Bench Speed (1-100)", "50", function(text)
+    benchSpeed = tonumber(text) or 50
 end)
 
 GamepassPage:addToggle("Dumbbell", function(state)
     dumbbellEnabled = state
 end)
 
-GamepassPage:addSlider("Dumbbell Speed", 0.1, 5, function(value)
-    dumbbellDelay = value
+GamepassPage:addTextbox("Dumbbell Speed (1-100)", "50", function(text)
+    dumbbellSpeed = tonumber(text) or 50
 end)
 
+-- LOOP
 task.spawn(function()
     while true do
 
@@ -58,7 +81,7 @@ task.spawn(function()
                 .Remotes
                 .PushUp
                 :FireServer("{}")
-            task.wait(pushupsDelay)
+            task.wait(getDelay(pushupsSpeed))
         end
 
         if situpsEnabled then
@@ -66,7 +89,7 @@ task.spawn(function()
                 .Remotes
                 .SitUp
                 :FireServer("{}")
-            task.wait(situpsDelay)
+            task.wait(getDelay(situpsSpeed))
         end
 
         if benchEnabled then
@@ -74,7 +97,7 @@ task.spawn(function()
                 .Remotes
                 .Bench
                 :FireServer("{}")
-            task.wait(benchDelay)
+            task.wait(getDelay(benchSpeed))
         end
 
         if dumbbellEnabled then
@@ -82,9 +105,18 @@ task.spawn(function()
                 .Remotes
                 .Dumbell
                 :FireServer("{}")
-            task.wait(dumbbellDelay)
+            task.wait(getDelay(dumbbellSpeed))
         end
 
-        task.wait(0.1)
+        -- BLACK BAGS (FIXED VERSION)
+        if blackbagsEnabled then
+            game:GetService("ReplicatedStorage")
+                .Remotes
+                .DoubleReg
+                :FireServer("{}")
+            task.wait(getDelay(blackbagsSpeed))
+        end
+
+        task.wait(0.05)
     end
 end)
