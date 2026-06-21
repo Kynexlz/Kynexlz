@@ -4,7 +4,9 @@ local Window = Library:CreateWindow("Training Hub")
 
 local MainPage = Window:addPage("Main", 4, true, 6)
 local GamepassPage = Window:addPage("Gamepass", 4, false, 6)
+local TeleportPage = Window:addPage("Teleports", 4, false, 6)
 
+TeleportPage:addLabel("Teleport Locations")
 MainPage:addLabel("Auto Training")
 GamepassPage:addLabel("Gamepass Training")
 
@@ -36,6 +38,43 @@ end)
 
 GamepassPage:addToggle("Dumbbell", function(state)
     dumbbellEnabled = state
+end)
+
+-- TELEPORT BUTTONS
+TeleportPage:addButton("Cobra Kai Dojo", function()
+    local player = game.Players.LocalPlayer
+    if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+        player.Character.HumanoidRootPart.CFrame = CFrame.new(
+            37.0504265, 0.535129905, 38.3588409,
+            1, 0, 0,
+            0, 1, 0,
+            0, 0, 1
+        )
+    end
+end)
+
+TeleportPage:addButton("Safezone", function()
+    local player = game.Players.LocalPlayer
+    if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+        player.Character.HumanoidRootPart.CFrame = CFrame.new(
+            95.6090012, 3.75900006, 49.5027618,
+            0, 0, -1,
+            0, 1, 0,
+            1, 0, 0
+        )
+    end
+end)
+
+TeleportPage:addButton("Miyagi-Do", function()
+    local player = game.Players.LocalPlayer
+    if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+        player.Character.HumanoidRootPart.CFrame = CFrame.new(
+            -55.3632812, 2.65002441, -1008.39368,
+            -1, 0, 0,
+             0, 1, 0,
+             0, 0, -1
+        )
+    end
 end)
 
 -- LOOP
