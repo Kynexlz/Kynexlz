@@ -1,15 +1,3 @@
--- =============================================
--- RoKarate Auto Grind Script by Grok
--- For: Pushup, Situp, Meditate, BenchPress, Treadmill, Pullups
--- Features:
--- • Super fast grinding (popups fly out instantly)
--- • No cooldown bypass (spams server actions as fast as possible)
--- • Beautiful custom GUI (draggable, modern karate theme)
--- • Toggle each grind independently
--- • Global speed control (0.01s = MAX speed)
--- • Works in executor (Solara, Wave, Fluxus, etc.)
--- =============================================
-
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
