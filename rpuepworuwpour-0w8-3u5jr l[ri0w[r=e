@@ -1,0 +1,228 @@
+--[[
+	WARNING: Heads up! This script has not been verified by ScriptBlox. Use at your own risk!
+]]
+loadstring([[
+local CoreGui = game:GetService("CoreGui")
+local Players = game:GetService("Players")
+local VIM = game:GetService("VirtualInputManager")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+
+if CoreGui:FindFirstChild("DragonSideClickerV2") then
+    CoreGui.DragonSideClickerV2:Destroy()
+end
+
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "DragonSideClickerV2"
+ScreenGui.Parent = CoreGui
+ScreenGui.ResetOnSpawn = false
+
+-- Hardcoded Main Menu Panel (Height extended slightly to 200 to fit the "?" button comfortably)
+local SidePanel = Instance.new("Frame")
+SidePanel.Size = UDim2.new(0, 110, 0, 200)
+SidePanel.Position = UDim2.new(1, -150, 0.35, 0)
+SidePanel.BackgroundColor3 = Color3.fromRGB(220, 220, 220)
+SidePanel.BackgroundTransparency = 0.35
+SidePanel.Active = true
+SidePanel.Parent = ScreenGui
+
+local PanelCorner = Instance.new("UICorner")
+PanelCorner.CornerRadius = UDim.new(0, 12)
+PanelCorner.Parent = SidePanel
+
+local ClickPositions = {}
+local IsClicking = false
+local ClickConnection = nil
+
+local function makeElementDraggableWithBorders(element, isMainPanel)
+    local dragging = false
+    local dragInput, dragStart, startPos
+
+    element.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            element:SetAttribute("BeingDragged", true)
+            if not isMainPanel then
+                element.BackgroundTransparency = 0.8
+            end
+            dragStart = input.Position
+            startPos = element.Position
+
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                    element:SetAttribute("BeingDragged", false)
+                    if not isMainPanel then
+                        element.BackgroundTransparency = 0.4
+                    end
+                end
+            end)
+        end
+    end)
+
+    element.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+            dragInput = input
+        end
+    end)
+
+    UserInputService.InputChanged:Connect(function(input)
+        if input == dragInput and dragging then
+            local delta = input.Position - dragStart
+            local newOffsetX = startPos.X.Offset + delta.X
+            local newOffsetY = startPos.Y.Offset + delta.Y
+            
+            local screenSize = ScreenGui.AbsoluteSize
+            
+            if isMainPanel then
+                local maxBoundsX = screenSize.X - element.AbsoluteSize.X
+                local maxBoundsY = screenSize.Y - element.AbsoluteSize.Y
+                local clampedX = math.clamp(newOffsetX, 0, maxBoundsX)
+                local clampedY = math.clamp(newOffsetY, 0, maxBoundsY)
+                element.Position = UDim2.new(0, clampedX, 0, clampedY)
+            else
+                element.Position = UDim2.new(0, newOffsetX, 0, newOffsetY)
+            end
+        end
+    end)
+end
+
+makeElementDraggableWithBorders(SidePanel, true)
+
+local function createBlockBtn(color, sizeX, sizeY, posX, posY, text, textSize, parent)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(0, sizeX, 0, sizeY)
+    btn.Position = UDim2.new(0, posX, 0, posY)
+    btn.BackgroundColor3 = color
+    btn.Text = text
+    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btn.Font = Enum.Font.SourceSansBold
+    btn.TextSize = textSize
+    btn.AutoButtonColor = true
+    btn.Parent = parent
+    
+    local btnCorner = Instance.new("UICorner")
+    btnCorner.CornerRadius = UDim.new(0, 8)
+    btnCorner.Parent = btn
+    return btn
+end
+
+-- Menu Buttons Stack
+local SpawnBtn = createBlockBtn(Color3.fromRGB(52, 152, 219), 94, 36, 8, 12, "+", 24, SidePanel)
+local PlayBtn  = createBlockBtn(Color3.fromRGB(46, 204, 113), 94, 36, 8, 58, "Start", 18, SidePanel)
+local PauseBtn = createBlockBtn(Color3.fromRGB(231, 76, 60), 94, 36, 8, 104, "Clear/Stop", 16, SidePanel)
+
+-- Purple Info Button at the bottom
+local InfoBtn  = createBlockBtn(Color3.fromRGB(142, 68, 173), 94, 36, 8, 150, "?", 20, SidePanel)
+
+-- Credits Pop-Up UI Window (Hidden by default)
+local CreditsFrame = Instance.new("Frame")
+CreditsFrame.Size = UDim2.new(0, 240, 0, 130)
+CreditsFrame.Position = UDim2.new(0.5, -120, 0.4, -65)
+CreditsFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+CreditsFrame.BorderSizePixel = 0
+CreditsFrame.Visible = false
+CreditsFrame.Active = true
+CreditsFrame.Parent = ScreenGui
+
+local CreditsCorner = Instance.new("UICorner")
+CreditsCorner.CornerRadius = UDim.new(0, 10)
+CreditsCorner.Parent = CreditsFrame
+
+-- Credits Content text wrapper
+local InfoText = Instance.new("TextLabel")
+InfoText.Size = UDim2.new(1, -16, 1, -24)
+InfoText.Position = UDim2.new(0, 8, 0, 20)
+InfoText.BackgroundTransparency = 1
+InfoText.Text = "singularity_scripts on scriptblox\nthebakerconbacon on roblox\n\nMADE BY GEMINI AI"
+InfoText.TextColor3 = Color3.fromRGB(240, 240, 240)
+InfoText.Font = Enum.Font.SourceSansBold
+InfoText.TextSize = 15
+InfoText.TextWrapped = true
+InfoText.Parent = CreditsFrame
+
+-- 'X' Close button for info menu
+local CloseInfoBtn = Instance.new("TextButton")
+CloseInfoBtn.Size = UDim2.new(0, 24, 0, 24)
+CloseInfoBtn.Position = UDim2.new(1, -28, 0, 4)
+CloseInfoBtn.BackgroundTransparency = 1
+CloseInfoBtn.Text = "X"
+CloseInfoBtn.TextColor3 = Color3.fromRGB(231, 76, 60)
+CloseInfoBtn.Font = Enum.Font.SourceSansBold
+CloseInfoBtn.TextSize = 18
+CloseInfoBtn.Parent = CreditsFrame
+
+-- Interactive Handlers for the Info Overlay
+InfoBtn.MouseButton1Click:Connect(function()
+    CreditsFrame.Visible = true
+end)
+
+CloseInfoBtn.MouseButton1Click:Connect(function()
+    CreditsFrame.Visible = false
+end)
+
+-- Main logic loops
+SpawnBtn.MouseButton1Click:Connect(function()
+    if #ClickPositions >= 1 then return end
+
+    local TargetBox = Instance.new("Frame")
+    TargetBox.Size = UDim2.new(0, 50, 0, 50) 
+    
+    local screenCenter = ScreenGui.AbsoluteSize
+    TargetBox.Position = UDim2.new(0, (screenCenter.X / 2) - 25, 0, (screenCenter.Y / 2) - 25)
+    
+    TargetBox.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    TargetBox.BackgroundTransparency = 0.4
+    TargetBox.Active = true
+    TargetBox.Parent = ScreenGui
+    
+    local boxCorner = Instance.new("UICorner")
+    boxCorner.CornerRadius = UDim.new(0, 8)
+    boxCorner.Parent = TargetBox
+
+    local CenterDot = Instance.new("Frame")
+    CenterDot.Size = UDim2.new(0, 6, 0, 6)
+    CenterDot.Position = UDim2.new(0.5, -3, 0.5, -3)
+    CenterDot.BackgroundColor3 = Color3.fromRGB(52, 152, 219)
+    CenterDot.Parent = TargetBox
+    
+    TargetBox:SetAttribute("BeingDragged", false)
+    makeElementDraggableWithBorders(TargetBox, false)
+    table.insert(ClickPositions, TargetBox)
+end)
+
+PlayBtn.MouseButton1Click:Connect(function()
+    if IsClicking then return end
+    IsClicking = true
+    
+    ClickConnection = RunService.Heartbeat:Connect(function()
+        for _, box in ipairs(ClickPositions) do
+            if box and box.Parent and box:GetAttribute("BeingDragged") == false then
+                
+                local targetX = box.AbsolutePosition.X + (box.AbsoluteSize.X / 2)
+                local targetY = box.AbsolutePosition.Y + (box.AbsoluteSize.Y / 2)
+                
+                for i = 1, 5 do
+                    VIM:SendMouseButtonEvent(targetX, targetY, 0, true, game, 1)
+                    VIM:SendMouseButtonEvent(targetX, targetY, 0, false, game, 1)
+                end
+            end
+        end
+    end)
+end)
+
+PauseBtn.MouseButton1Click:Connect(function()
+    IsClicking = false
+    if ClickConnection then
+        ClickConnection:Disconnect()
+        ClickConnection = nil
+    end
+    for _, box in ipairs(ClickPositions) do
+        if box and box.Parent then
+            box:Destroy()
+        end
+    end
+    table.clear(ClickPositions)
+end)
+]])()
+
