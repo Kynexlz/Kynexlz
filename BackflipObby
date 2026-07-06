@@ -1,0 +1,20 @@
+local player = game.Players.LocalPlayer
+
+local targetCFrame = CFrame.new(
+    21163.2148, 59.9424553, -772.005188,
+    -1, 0, 0,
+    0, 1, 0,
+    0, 0, -1
+)
+
+local function teleportLoop()
+    while true do
+        local character = player.Character
+        if character then
+            character:PivotTo(targetCFrame)
+        end
+        task.wait(1)
+    end
+end
+
+teleportLoop()
