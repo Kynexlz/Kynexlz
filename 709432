@@ -1,0 +1,8 @@
+game.Players.LocalPlayer.Chatted:Connect(function(m)
+	local n=m:match("^![Jj][Uu]?[Mm]?[Pp]?%s+(%d+)")
+	if n then
+		local h=game.Players.LocalPlayer.Character:FindFirstChild("Humanoid")
+		h.UseJumpPower=true
+		h.JumpPower=tonumber(n)
+	end
+end)
