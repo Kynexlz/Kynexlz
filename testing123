@@ -3,20 +3,20 @@ local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local TextChatService = game:GetService("TextChatService")
 local Debris = game:GetService("Debris")
-
+ 
 local LocalPlayer = Players.LocalPlayer
-
+ 
 ----------------------------------------------------------------
 -- CONFIG
 ----------------------------------------------------------------
-
+ 
 local PREFIX = "?"
 local CORNER = "TopRight" -- "TopLeft" | "TopRight" | "BottomLeft" | "BottomRight"
-
+ 
 ----------------------------------------------------------------
 -- COMMAND LIST (label + hint shown in the panel)
 ----------------------------------------------------------------
-
+ 
 local COMMANDS = {
 	{ name = "speed",     usage = "speed [1-1000]",        desc = "Set your walk speed" },
 	{ name = "jumppower", usage = "jumppower [1-1000]",     desc = "Set your jump power" },
@@ -42,14 +42,22 @@ local COMMANDS = {
 	{ name = "unfollow",  usage = "unfollow",               desc = "Stop following" },
 	{ name = "float",     usage = "float",                  desc = "Hover in place" },
 	{ name = "unfloat",   usage = "unfloat",                desc = "Stop floating" },
+	{ name = "antivoid",   usage = "antivoid",              desc = "Auto-recover if you fall into the void" },
+	{ name = "unantivoid", usage = "unantivoid",            desc = "Turn antivoid off" },
+	{ name = "antilag",    usage = "antilag",               desc = "Reduce visual effects for performance" },
+	{ name = "unantilag",  usage = "unantilag",             desc = "Restore normal visuals" },
+	{ name = "rocketfly",  usage = "rocketfly [mobile/pc]", desc = "Fly with rocket particles + tilt" },
+	{ name = "unrocketfly",usage = "unrocketfly",           desc = "Turn rocket fly off" },
+	{ name = "rocketjump", usage = "rocketjump",            desc = "Boosted jump with particle burst" },
+	{ name = "unrocketjump", usage = "unrocketjump",        desc = "Turn rocket jump off" },
 	{ name = "print",     usage = "print",                  desc = "Prints hello to console" },
 	{ name = "prefix",    usage = "prefix",                 desc = "Shows the command prefix" },
 }
-
+ 
 ----------------------------------------------------------------
 -- THEME
 ----------------------------------------------------------------
-
+ 
 local COLOR_BG        = Color3.fromRGB(12, 12, 12)
 local COLOR_PANEL     = Color3.fromRGB(18, 18, 18)
 local COLOR_ROW       = Color3.fromRGB(24, 24, 24)
@@ -59,17 +67,17 @@ local COLOR_GRAY      = Color3.fromRGB(150, 150, 150)
 local COLOR_STROKE    = Color3.fromRGB(45, 45, 45)
 local FONT            = Enum.Font.GothamMedium
 local FONT_BOLD       = Enum.Font.GothamBold
-
+ 
 ----------------------------------------------------------------
 -- GUI BUILD
 ----------------------------------------------------------------
-
+ 
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "AdminPanel"
 screenGui.ResetOnSpawn = false
 screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 screenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
-
+ 
 local anchors = {
 	TopLeft     = { pos = UDim2.new(0, 16, 0, 16), anchor = Vector2.new(0, 0) },
 	TopRight    = { pos = UDim2.new(1, -16, 0, 16), anchor = Vector2.new(1, 0) },
@@ -77,30 +85,30 @@ local anchors = {
 	BottomRight = { pos = UDim2.new(1, -16, 1, -16), anchor = Vector2.new(1, 1) },
 }
 local cornerData = anchors[CORNER] or anchors.TopRight
-
+ 
 local toggleBtn = Instance.new("TextButton")
 toggleBtn.Name = "ToggleButton"
 toggleBtn.Size = UDim2.new(0, 44, 0, 44)
 toggleBtn.Position = cornerData.pos
 toggleBtn.AnchorPoint = cornerData.anchor
 toggleBtn.BackgroundColor3 = COLOR_PANEL
-toggleBtn.Text = ">_"
+toggleBtn.Text = "KX"
 toggleBtn.Font = FONT_BOLD
 toggleBtn.TextSize = 18
 toggleBtn.TextColor3 = COLOR_WHITE
 toggleBtn.AutoButtonColor = false
 toggleBtn.ZIndex = 10
 toggleBtn.Parent = screenGui
-
+ 
 local toggleCorner = Instance.new("UICorner")
 toggleCorner.CornerRadius = UDim.new(0, 10)
 toggleCorner.Parent = toggleBtn
-
+ 
 local toggleStroke = Instance.new("UIStroke")
 toggleStroke.Color = COLOR_STROKE
 toggleStroke.Thickness = 1
 toggleStroke.Parent = toggleBtn
-
+ 
 local panel = Instance.new("Frame")
 panel.Name = "Panel"
 panel.Size = UDim2.new(0, 300, 0, 380)
@@ -108,7 +116,7 @@ panel.BackgroundColor3 = COLOR_BG
 panel.Visible = false
 panel.ZIndex = 10
 panel.Parent = screenGui
-
+ 
 if CORNER == "TopRight" then
 	panel.Position = UDim2.new(1, -16, 0, 68)
 	panel.AnchorPoint = Vector2.new(1, 0)
@@ -122,26 +130,26 @@ else
 	panel.Position = UDim2.new(0, 16, 1, -68)
 	panel.AnchorPoint = Vector2.new(0, 1)
 end
-
+ 
 local panelCorner = Instance.new("UICorner")
 panelCorner.CornerRadius = UDim.new(0, 12)
 panelCorner.Parent = panel
-
+ 
 local panelStroke = Instance.new("UIStroke")
 panelStroke.Color = COLOR_STROKE
 panelStroke.Thickness = 1
 panelStroke.Parent = panel
-
+ 
 local header = Instance.new("Frame")
 header.Size = UDim2.new(1, 0, 0, 44)
 header.BackgroundColor3 = COLOR_PANEL
 header.ZIndex = 10
 header.Parent = panel
-
+ 
 local headerCorner = Instance.new("UICorner")
 headerCorner.CornerRadius = UDim.new(0, 12)
 headerCorner.Parent = header
-
+ 
 local headerMask = Instance.new("Frame")
 headerMask.Size = UDim2.new(1, 0, 0, 12)
 headerMask.Position = UDim2.new(0, 0, 1, -12)
@@ -149,35 +157,82 @@ headerMask.BackgroundColor3 = COLOR_PANEL
 headerMask.BorderSizePixel = 0
 headerMask.ZIndex = 10
 headerMask.Parent = header
-
+ 
 local title = Instance.new("TextLabel")
 title.Size = UDim2.new(1, -20, 1, 0)
 title.Position = UDim2.new(0, 14, 0, 0)
 title.BackgroundTransparency = 1
-title.Text = "ADMIN PANEL"
+title.Text = "KRYLONIX PANEL"
 title.Font = FONT_BOLD
 title.TextSize = 14
 title.TextColor3 = COLOR_WHITE
 title.TextXAlignment = Enum.TextXAlignment.Left
 title.ZIndex = 11
 title.Parent = header
-
+ 
+----------------------------------------------------------------
+-- DRAGGING (drag the panel by its header, mouse + touch)
+----------------------------------------------------------------
+ 
+do
+	local dragging = false
+	local dragStartInputPos = nil
+	local dragStartPanelPos = nil
+ 
+	local function beginDrag(input)
+		dragging = true
+		dragStartInputPos = input.Position
+		dragStartPanelPos = panel.Position
+	end
+ 
+	local function updateDrag(input)
+		if not dragging then return end
+		local delta = input.Position - dragStartInputPos
+		panel.Position = UDim2.new(
+			dragStartPanelPos.X.Scale, dragStartPanelPos.X.Offset + delta.X,
+			dragStartPanelPos.Y.Scale, dragStartPanelPos.Y.Offset + delta.Y
+		)
+	end
+ 
+	header.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1
+			or input.UserInputType == Enum.UserInputType.Touch then
+			beginDrag(input)
+ 
+			local conn
+			conn = input.Changed:Connect(function()
+				if input.UserInputState == Enum.UserInputState.End then
+					dragging = false
+					conn:Disconnect()
+				end
+			end)
+		end
+	end)
+ 
+	UserInputService.InputChanged:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseMovement
+			or input.UserInputType == Enum.UserInputType.Touch then
+			updateDrag(input)
+		end
+	end)
+end
+ 
 local searchHolder = Instance.new("Frame")
 searchHolder.Size = UDim2.new(1, -24, 0, 34)
 searchHolder.Position = UDim2.new(0, 12, 0, 54)
 searchHolder.BackgroundColor3 = COLOR_ROW
 searchHolder.ZIndex = 10
 searchHolder.Parent = panel
-
+ 
 local searchCorner = Instance.new("UICorner")
 searchCorner.CornerRadius = UDim.new(0, 8)
 searchCorner.Parent = searchHolder
-
+ 
 local searchStroke = Instance.new("UIStroke")
 searchStroke.Color = COLOR_STROKE
 searchStroke.Thickness = 1
 searchStroke.Parent = searchHolder
-
+ 
 local searchBox = Instance.new("TextBox")
 searchBox.Size = UDim2.new(1, -20, 1, 0)
 searchBox.Position = UDim2.new(0, 10, 0, 0)
@@ -192,7 +247,7 @@ searchBox.TextXAlignment = Enum.TextXAlignment.Left
 searchBox.ClearTextOnFocus = false
 searchBox.ZIndex = 11
 searchBox.Parent = searchHolder
-
+ 
 local listFrame = Instance.new("ScrollingFrame")
 listFrame.Size = UDim2.new(1, -24, 1, -180)
 listFrame.Position = UDim2.new(0, 12, 0, 96)
@@ -204,28 +259,28 @@ listFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
 listFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
 listFrame.ZIndex = 10
 listFrame.Parent = panel
-
+ 
 local listLayout = Instance.new("UIListLayout")
 listLayout.Padding = UDim.new(0, 6)
 listLayout.SortOrder = Enum.SortOrder.LayoutOrder
 listLayout.Parent = listFrame
-
+ 
 local inputHolder = Instance.new("Frame")
 inputHolder.Size = UDim2.new(1, -24, 0, 34)
 inputHolder.Position = UDim2.new(0, 12, 1, -78)
 inputHolder.BackgroundColor3 = COLOR_ROW
 inputHolder.ZIndex = 10
 inputHolder.Parent = panel
-
+ 
 local inputCorner = Instance.new("UICorner")
 inputCorner.CornerRadius = UDim.new(0, 8)
 inputCorner.Parent = inputHolder
-
+ 
 local inputStroke = Instance.new("UIStroke")
 inputStroke.Color = COLOR_STROKE
 inputStroke.Thickness = 1
 inputStroke.Parent = inputHolder
-
+ 
 local inputBox = Instance.new("TextBox")
 inputBox.Size = UDim2.new(1, -20, 1, 0)
 inputBox.Position = UDim2.new(0, 10, 0, 0)
@@ -240,7 +295,7 @@ inputBox.TextXAlignment = Enum.TextXAlignment.Left
 inputBox.ClearTextOnFocus = false
 inputBox.ZIndex = 11
 inputBox.Parent = inputHolder
-
+ 
 local runBtn = Instance.new("TextButton")
 runBtn.Size = UDim2.new(1, -24, 0, 34)
 runBtn.Position = UDim2.new(0, 12, 1, -36)
@@ -252,21 +307,113 @@ runBtn.TextColor3 = COLOR_BG
 runBtn.AutoButtonColor = false
 runBtn.ZIndex = 10
 runBtn.Parent = panel
-
+ 
 local runCorner = Instance.new("UICorner")
 runCorner.CornerRadius = UDim.new(0, 8)
 runCorner.Parent = runBtn
-
+ 
+----------------------------------------------------------------
+-- DRAGGABLE
+----------------------------------------------------------------
+ 
+-- generic drag-by-handle, moves `frame`, drag started from `handle`
+local function makeDraggable(frame, handle)
+	local dragging = false
+	local dragInput, dragStart, startPos
+ 
+	local function update(input)
+		local delta = input.Position - dragStart
+		frame.Position = UDim2.new(
+			startPos.X.Scale, startPos.X.Offset + delta.X,
+			startPos.Y.Scale, startPos.Y.Offset + delta.Y
+		)
+	end
+ 
+	handle.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+			dragging = true
+			dragStart = input.Position
+			startPos = frame.Position
+ 
+			input.Changed:Connect(function()
+				if input.UserInputState == Enum.UserInputState.End then
+					dragging = false
+				end
+			end)
+		end
+	end)
+ 
+	handle.InputChanged:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+			dragInput = input
+		end
+	end)
+ 
+	UserInputService.InputChanged:Connect(function(input)
+		if dragging and input == dragInput then
+			update(input)
+		end
+	end)
+end
+ 
+makeDraggable(panel, header)
+ 
+-- toggle button: draggable, but a small click (no real movement) still opens/closes the panel
+do
+	local dragging = false
+	local dragInput, dragStart, startPos
+	local moved = false
+	local MOVE_THRESHOLD = 4
+ 
+	local function update(input)
+		local delta = input.Position - dragStart
+		if delta.Magnitude > MOVE_THRESHOLD then
+			moved = true
+		end
+		toggleBtn.Position = UDim2.new(
+			startPos.X.Scale, startPos.X.Offset + delta.X,
+			startPos.Y.Scale, startPos.Y.Offset + delta.Y
+		)
+	end
+ 
+	toggleBtn.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+			dragging = true
+			moved = false
+			dragStart = input.Position
+			startPos = toggleBtn.Position
+ 
+			input.Changed:Connect(function()
+				if input.UserInputState == Enum.UserInputState.End then
+					dragging = false
+				end
+			end)
+		end
+	end)
+ 
+	toggleBtn.InputChanged:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+			dragInput = input
+		end
+	end)
+ 
+	UserInputService.InputChanged:Connect(function(input)
+		if dragging and input == dragInput then
+			update(input)
+		end
+	end)
+end
+ 
 ----------------------------------------------------------------
 -- HELPERS
 ----------------------------------------------------------------
-
+ 
 local function clamp(n, min, max)
 	n = tonumber(n)
 	if not n then return nil end
 	return math.clamp(n, min, max)
 end
-
+ 
 local function getCharacter()
 	local char = LocalPlayer.Character
 	if not char then return nil end
@@ -275,7 +422,7 @@ local function getCharacter()
 	if not hum or not hrp then return nil end
 	return char, hum, hrp
 end
-
+ 
 local function findPlayerByName(query)
 	query = string.lower(query)
 	for _, p in ipairs(Players:GetPlayers()) do
@@ -290,7 +437,7 @@ local function findPlayerByName(query)
 	end
 	return nil
 end
-
+ 
 local function splitArgs(str)
 	local args = {}
 	for word in string.gmatch(str, "%S+") do
@@ -298,18 +445,18 @@ local function splitArgs(str)
 	end
 	return args
 end
-
+ 
 ----------------------------------------------------------------
 -- FLY / NOCLIP STATE
 ----------------------------------------------------------------
-
+ 
 local flying = false
 local flyConn = nil
 local flyKeysDown = {}
-
+ 
 local noclipping = false
 local noclipConn = nil
-
+ 
 local function stopFly()
 	flying = false
 	if flyConn then
@@ -327,31 +474,31 @@ local function stopFly()
 		hum.PlatformStand = false
 	end
 end
-
+ 
 local function startFly()
 	local char, hum, hrp = getCharacter()
 	if not hrp then return end
-
+ 
 	stopFly()
 	flying = true
-
+ 
 	local bv = Instance.new("BodyVelocity")
 	bv.Name = "AdminFlyForce"
 	bv.MaxForce = Vector3.new(1e5, 1e5, 1e5)
 	bv.Velocity = Vector3.new(0, 0, 0)
 	bv.Parent = hrp
-
+ 
 	local bg = Instance.new("BodyGyro")
 	bg.Name = "AdminFlyGyro"
 	bg.MaxTorque = Vector3.new(1e5, 1e5, 1e5)
 	bg.D = 50
 	bg.CFrame = hrp.CFrame
 	bg.Parent = hrp
-
+ 
 	hum.PlatformStand = true
-
+ 
 	local speed = 50
-
+ 
 	flyConn = RunService.Heartbeat:Connect(function()
 		if not flying then return end
 		local _, curHum, curHrp = getCharacter()
@@ -359,7 +506,7 @@ local function startFly()
 			stopFly()
 			return
 		end
-
+ 
 		local camera = workspace.CurrentCamera
 		local moveVector = Vector3.new(0, 0, 0)
 		if camera then
@@ -372,11 +519,11 @@ local function startFly()
 			if flyKeysDown[Enum.KeyCode.Space] then moveVector += Vector3.new(0, 1, 0) end
 			if flyKeysDown[Enum.KeyCode.LeftShift] then moveVector -= Vector3.new(0, 1, 0) end
 		end
-
+ 
 		if moveVector.Magnitude > 0 then
 			moveVector = moveVector.Unit
 		end
-
+ 
 		local curBv = curHrp:FindFirstChild("AdminFlyForce")
 		local curBg = curHrp:FindFirstChild("AdminFlyGyro")
 		if curBv then
@@ -387,7 +534,7 @@ local function startFly()
 		end
 	end)
 end
-
+ 
 local function stopNoclip()
 	noclipping = false
 	if noclipConn then
@@ -403,7 +550,7 @@ local function stopNoclip()
 		end
 	end
 end
-
+ 
 local function startNoclip()
 	stopNoclip()
 	noclipping = true
@@ -417,13 +564,13 @@ local function startNoclip()
 		end
 	end)
 end
-
+ 
 ----------------------------------------------------------------
 -- INVISIBLE STATE
 ----------------------------------------------------------------
-
+ 
 local invisible = false
-
+ 
 local function setInvisible(state)
 	invisible = state
 	local char = LocalPlayer.Character
@@ -434,17 +581,17 @@ local function setInvisible(state)
 		end
 	end
 end
-
+ 
 ----------------------------------------------------------------
 -- FREECAM STATE
 ----------------------------------------------------------------
-
+ 
 local freecamOn = false
 local freecamConn, freecamInputConn
 local freecamYaw, freecamPitch = 0, 0
 local freecamPos = Vector3.new()
 local savedCamType, savedCamSubject, savedMouseBehavior
-
+ 
 local function stopFreecam()
 	if not freecamOn then return end
 	freecamOn = false
@@ -457,75 +604,75 @@ local function stopFreecam()
 	end
 	UserInputService.MouseBehavior = savedMouseBehavior or Enum.MouseBehavior.Default
 end
-
+ 
 local function startFreecam()
 	local camera = workspace.CurrentCamera
 	if not camera then return end
 	stopFreecam()
 	freecamOn = true
-
+ 
 	savedCamType = camera.CameraType
 	savedCamSubject = camera.CameraSubject
 	savedMouseBehavior = UserInputService.MouseBehavior
-
+ 
 	local startCFrame = camera.CFrame
 	freecamPos = startCFrame.Position
 	local rx, ry = startCFrame:ToOrientation()
 	freecamYaw = math.deg(ry)
 	freecamPitch = math.deg(rx)
-
+ 
 	camera.CameraType = Enum.CameraType.Scriptable
 	UserInputService.MouseBehavior = Enum.MouseBehavior.LockCenter
-
+ 
 	freecamInputConn = UserInputService.InputChanged:Connect(function(input)
 		if input.UserInputType == Enum.UserInputType.MouseMovement then
 			freecamYaw = freecamYaw - input.Delta.X * 0.35
 			freecamPitch = math.clamp(freecamPitch - input.Delta.Y * 0.35, -85, 85)
 		end
 	end)
-
+ 
 	freecamConn = RunService.RenderStepped:Connect(function(dt)
 		local cam = workspace.CurrentCamera
 		if not cam then return end
-
+ 
 		local rotCFrame = CFrame.Angles(0, math.rad(freecamYaw), 0) * CFrame.Angles(math.rad(freecamPitch), 0, 0)
 		local moveVector = Vector3.new(0, 0, 0)
 		local look = rotCFrame.LookVector
 		local right = rotCFrame.RightVector
-
+ 
 		if flyKeysDown[Enum.KeyCode.W] then moveVector += look end
 		if flyKeysDown[Enum.KeyCode.S] then moveVector -= look end
 		if flyKeysDown[Enum.KeyCode.A] then moveVector -= right end
 		if flyKeysDown[Enum.KeyCode.D] then moveVector += right end
 		if flyKeysDown[Enum.KeyCode.Space] then moveVector += Vector3.new(0, 1, 0) end
 		if flyKeysDown[Enum.KeyCode.LeftShift] then moveVector -= Vector3.new(0, 1, 0) end
-
+ 
 		if moveVector.Magnitude > 0 then
 			moveVector = moveVector.Unit
 		end
-
+ 
 		freecamPos = freecamPos + moveVector * 80 * dt
 		cam.CFrame = CFrame.new(freecamPos) * rotCFrame
 	end)
 end
-
+ 
 ----------------------------------------------------------------
 -- FREEZE STATE (per target player)
 ----------------------------------------------------------------
-
+ 
 local frozenTargets = {} -- [Player] = { [BasePart] = originalAnchored }
-
+ 
 local function resolveTarget(name)
 	if name and name ~= "" then
 		return findPlayerByName(name)
 	end
 	return LocalPlayer
 end
-
+ 
 local function setFrozen(player, state)
 	local char = player.Character
 	if not char then return end
-
+ 
 	if state then
 		frozenTargets[player] = frozenTargets[player] or {}
 		for _, part in ipairs(char:GetDescendants()) do
@@ -546,14 +693,14 @@ local function setFrozen(player, state)
 		frozenTargets[player] = nil
 	end
 end
-
+ 
 ----------------------------------------------------------------
 -- LOOPSPEED STATE
 ----------------------------------------------------------------
-
+ 
 local loopSpeedConn = nil
 local loopSpeedValue = nil
-
+ 
 local function stopLoopSpeed()
 	if loopSpeedConn then
 		loopSpeedConn:Disconnect()
@@ -561,7 +708,7 @@ local function stopLoopSpeed()
 	end
 	loopSpeedValue = nil
 end
-
+ 
 local function startLoopSpeed(value)
 	stopLoopSpeed()
 	loopSpeedValue = value
@@ -572,13 +719,13 @@ local function startLoopSpeed(value)
 		end
 	end)
 end
-
+ 
 ----------------------------------------------------------------
 -- FLING / LOOPFLING STATE (per target player)
 ----------------------------------------------------------------
-
+ 
 local loopFlingConns = {} -- [Player] = RBXScriptConnection
-
+ 
 local function randomFlingVelocity()
 	return Vector3.new(
 		math.random(-300, 300),
@@ -586,7 +733,7 @@ local function randomFlingVelocity()
 		math.random(-300, 300)
 	)
 end
-
+ 
 local function stopLoopFling(player)
 	local conn = loopFlingConns[player]
 	if conn then
@@ -600,14 +747,14 @@ local function stopLoopFling(player)
 		if bv then bv:Destroy() end
 	end
 end
-
+ 
 ----------------------------------------------------------------
 -- FOLLOW STATE
 ----------------------------------------------------------------
-
+ 
 local followTarget = nil
 local followConn = nil
-
+ 
 local function stopFollow()
 	followTarget = nil
 	if followConn then
@@ -615,7 +762,7 @@ local function stopFollow()
 		followConn = nil
 	end
 end
-
+ 
 local function startFollow(target)
 	stopFollow()
 	followTarget = target
@@ -628,11 +775,11 @@ local function startFollow(target)
 		local tChar = followTarget.Character
 		local tHrp = tChar and tChar:FindFirstChild("HumanoidRootPart")
 		if not hrp or not tHrp then return end
-
+ 
 		local t = tick()
 		local offset = Vector3.new(math.sin(t * 4) * 6, math.sin(t * 6) * 2 + 3, math.cos(t * 4) * 6)
 		hrp.CFrame = CFrame.new(tHrp.Position + offset, tHrp.Position)
-
+ 
 		-- purely cosmetic flash/sound burst (no blast damage or knockback force)
 		if math.random() < 0.15 then
 			local explosion = Instance.new("Explosion")
@@ -643,13 +790,13 @@ local function startFollow(target)
 		end
 	end)
 end
-
+ 
 ----------------------------------------------------------------
 -- FLOAT STATE
 ----------------------------------------------------------------
-
+ 
 local floatConn = nil
-
+ 
 local function stopFloat()
 	if floatConn then
 		floatConn:Disconnect()
@@ -661,17 +808,17 @@ local function stopFloat()
 		if bf then bf:Destroy() end
 	end
 end
-
+ 
 local function startFloat()
 	local _, _, hrp = getCharacter()
 	if not hrp then return end
 	stopFloat()
-
+ 
 	local bf = Instance.new("BodyForce")
 	bf.Name = "AdminFloat"
 	bf.Force = Vector3.new(0, workspace.Gravity * hrp.AssemblyMass, 0)
 	bf.Parent = hrp
-
+ 
 	floatConn = RunService.Heartbeat:Connect(function()
 		local _, _, curHrp = getCharacter()
 		if not curHrp then
@@ -684,13 +831,331 @@ local function startFloat()
 		end
 	end)
 end
-
+ 
+----------------------------------------------------------------
+-- ANTI-VOID (auto-recover if you fall below the map)
+----------------------------------------------------------------
+ 
+local antiVoidActive = false
+local antiVoidConn = nil
+local lastSafePosition = nil
+local VOID_Y_THRESHOLD = -150
+ 
+local function stopAntiVoid()
+	antiVoidActive = false
+	if antiVoidConn then
+		antiVoidConn:Disconnect()
+		antiVoidConn = nil
+	end
+end
+ 
+local function startAntiVoid()
+	stopAntiVoid()
+	antiVoidActive = true
+	antiVoidConn = RunService.Heartbeat:Connect(function()
+		local _, _, hrp = getCharacter()
+		if not hrp then return end
+		if hrp.Position.Y > VOID_Y_THRESHOLD then
+			lastSafePosition = hrp.Position
+		elseif lastSafePosition then
+			hrp.CFrame = CFrame.new(lastSafePosition + Vector3.new(0, 5, 0))
+		end
+	end)
+end
+ 
+----------------------------------------------------------------
+-- ANTI-LAG (reduces particle/lighting effects to help performance)
+----------------------------------------------------------------
+ 
+local antiLagActive = false
+local antiLagDisabledEmitters = {}
+local antiLagOriginalLightingProps = {}
+local antiLagDisabledEffects = {}
+ 
+local function startAntiLag()
+	if antiLagActive then return end
+	antiLagActive = true
+ 
+	for _, obj in ipairs(workspace:GetDescendants()) do
+		if (obj:IsA("ParticleEmitter") or obj:IsA("Trail") or obj:IsA("Beam")) and obj.Enabled then
+			obj.Enabled = false
+			table.insert(antiLagDisabledEmitters, obj)
+		end
+	end
+ 
+	local Lighting = game:GetService("Lighting")
+	antiLagOriginalLightingProps.GlobalShadows = Lighting.GlobalShadows
+	Lighting.GlobalShadows = false
+ 
+	for _, effect in ipairs(Lighting:GetChildren()) do
+		if effect:IsA("PostEffect") and effect.Enabled then
+			effect.Enabled = false
+			table.insert(antiLagDisabledEffects, effect)
+		end
+	end
+end
+ 
+local function stopAntiLag()
+	antiLagActive = false
+	for _, obj in ipairs(antiLagDisabledEmitters) do
+		if obj and obj.Parent then
+			obj.Enabled = true
+		end
+	end
+	antiLagDisabledEmitters = {}
+ 
+	for _, effect in ipairs(antiLagDisabledEffects) do
+		if effect and effect.Parent then
+			effect.Enabled = true
+		end
+	end
+	antiLagDisabledEffects = {}
+ 
+	local Lighting = game:GetService("Lighting")
+	if antiLagOriginalLightingProps.GlobalShadows ~= nil then
+		Lighting.GlobalShadows = antiLagOriginalLightingProps.GlobalShadows
+	end
+end
+ 
+----------------------------------------------------------------
+-- ROCKET FLY (fly with particle trail + tilt animation, PC/mobile aware)
+----------------------------------------------------------------
+ 
+local rocketFlying = false
+local rocketFlyConn = nil
+local rocketMobileUp = false
+local rocketMobileDown = false
+local rocketFlyButtonsGui = nil
+ 
+local function makeRocketExhaust(hrp)
+	local attachment = Instance.new("Attachment")
+	attachment.Name = "RocketFlyAttachment"
+	attachment.Position = Vector3.new(0, -2.2, 0)
+	attachment.Parent = hrp
+ 
+	local particle = Instance.new("ParticleEmitter")
+	particle.Name = "RocketFlyParticle"
+	particle.Texture = "rbxasset://textures/particles/fire_main.dds"
+	particle.Rate = 60
+	particle.Lifetime = NumberRange.new(0.25, 0.4)
+	particle.Speed = NumberRange.new(6, 10)
+	particle.SpreadAngle = Vector2.new(8, 8)
+	particle.Size = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 1.2),
+		NumberSequenceKeypoint.new(1, 0),
+	})
+	particle.Color = ColorSequence.new(Color3.fromRGB(255, 255, 255), Color3.fromRGB(120, 120, 120))
+	particle.Parent = attachment
+	return attachment
+end
+ 
+local function makeRocketMobileButtons()
+	local gui = Instance.new("ScreenGui")
+	gui.Name = "RocketFlyControls"
+	gui.ResetOnSpawn = false
+	gui.Parent = LocalPlayer.PlayerGui
+ 
+	local function makeBtn(text, posY)
+		local btn = Instance.new("TextButton")
+		btn.Size = UDim2.new(0, 60, 0, 60)
+		btn.Position = UDim2.new(1, -80, 1, posY)
+		btn.AnchorPoint = Vector2.new(0, 0)
+		btn.BackgroundColor3 = COLOR_PANEL
+		btn.Text = text
+		btn.Font = FONT_BOLD
+		btn.TextSize = 22
+		btn.TextColor3 = COLOR_WHITE
+		btn.AutoButtonColor = false
+		btn.Parent = gui
+		local c = Instance.new("UICorner")
+		c.CornerRadius = UDim.new(1, 0)
+		c.Parent = btn
+		return btn
+	end
+ 
+	local upBtn = makeBtn("▲", -160)
+	local downBtn = makeBtn("▼", -90)
+ 
+	upBtn.MouseButton1Down:Connect(function() rocketMobileUp = true end)
+	upBtn.MouseButton1Up:Connect(function() rocketMobileUp = false end)
+	upBtn.TouchLongPress:Connect(function() end)
+	downBtn.MouseButton1Down:Connect(function() rocketMobileDown = true end)
+	downBtn.MouseButton1Up:Connect(function() rocketMobileDown = false end)
+ 
+	return gui
+end
+ 
+local function stopRocketFly()
+	rocketFlying = false
+	rocketMobileUp = false
+	rocketMobileDown = false
+	if rocketFlyConn then
+		rocketFlyConn:Disconnect()
+		rocketFlyConn = nil
+	end
+	if rocketFlyButtonsGui then
+		rocketFlyButtonsGui:Destroy()
+		rocketFlyButtonsGui = nil
+	end
+	local _, hum, hrp = getCharacter()
+	if hrp then
+		local bv = hrp:FindFirstChild("RocketFlyForce")
+		local bg = hrp:FindFirstChild("RocketFlyGyro")
+		local att = hrp:FindFirstChild("RocketFlyAttachment")
+		if bv then bv:Destroy() end
+		if bg then bg:Destroy() end
+		if att then att:Destroy() end
+	end
+	if hum then
+		hum.PlatformStand = false
+	end
+end
+ 
+local function startRocketFly(mode)
+	local char, hum, hrp = getCharacter()
+	if not hrp then return end
+ 
+	stopFly()
+	stopFloat()
+	stopRocketFly()
+	rocketFlying = true
+ 
+	mode = mode or ((UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled) and "mobile" or "pc")
+ 
+	local bv = Instance.new("BodyVelocity")
+	bv.Name = "RocketFlyForce"
+	bv.MaxForce = Vector3.new(1e5, 1e5, 1e5)
+	bv.Velocity = Vector3.new(0, 0, 0)
+	bv.Parent = hrp
+ 
+	local bg = Instance.new("BodyGyro")
+	bg.Name = "RocketFlyGyro"
+	bg.MaxTorque = Vector3.new(1e5, 1e5, 1e5)
+	bg.D = 50
+	bg.CFrame = hrp.CFrame
+	bg.Parent = hrp
+ 
+	hum.PlatformStand = true
+	makeRocketExhaust(hrp)
+ 
+	if mode == "mobile" then
+		rocketFlyButtonsGui = makeRocketMobileButtons()
+	end
+ 
+	local speed = 65
+ 
+	rocketFlyConn = RunService.Heartbeat:Connect(function()
+		if not rocketFlying then return end
+		local _, curHum, curHrp = getCharacter()
+		if not curHrp then
+			stopRocketFly()
+			return
+		end
+ 
+		local moveVector
+		if mode == "mobile" then
+			-- horizontal movement comes from the default touch thumbstick (Humanoid.MoveDirection),
+			-- vertical comes from the on-screen up/down buttons
+			moveVector = curHum.MoveDirection
+			if rocketMobileUp then moveVector += Vector3.new(0, 1, 0) end
+			if rocketMobileDown then moveVector -= Vector3.new(0, 1, 0) end
+		else
+			local camera = workspace.CurrentCamera
+			moveVector = Vector3.new(0, 0, 0)
+			if camera then
+				local lookVector = camera.CFrame.LookVector
+				local rightVector = camera.CFrame.RightVector
+				if flyKeysDown[Enum.KeyCode.W] then moveVector += lookVector end
+				if flyKeysDown[Enum.KeyCode.S] then moveVector -= lookVector end
+				if flyKeysDown[Enum.KeyCode.A] then moveVector -= rightVector end
+				if flyKeysDown[Enum.KeyCode.D] then moveVector += rightVector end
+				if flyKeysDown[Enum.KeyCode.Space] then moveVector += Vector3.new(0, 1, 0) end
+				if flyKeysDown[Enum.KeyCode.LeftShift] then moveVector -= Vector3.new(0, 1, 0) end
+			end
+		end
+ 
+		if moveVector.Magnitude > 0 then
+			moveVector = moveVector.Unit
+		end
+ 
+		local curBv = curHrp:FindFirstChild("RocketFlyForce")
+		local curBg = curHrp:FindFirstChild("RocketFlyGyro")
+		if curBv then
+			curBv.Velocity = moveVector * speed
+		end
+		if curBg then
+			-- tilt animation: nose points along travel direction, banks slightly with horizontal movement
+			if moveVector.Magnitude > 0.05 then
+				local flatMove = Vector3.new(moveVector.X, 0, moveVector.Z)
+				local lookTarget = curHrp.Position + (flatMove.Magnitude > 0.05 and flatMove or Vector3.new(0, 0, -1))
+				local tilt = math.clamp(moveVector.Y, -1, 1) * math.rad(25)
+				curBg.CFrame = CFrame.new(curHrp.Position, lookTarget) * CFrame.Angles(-tilt, 0, 0)
+			end
+		end
+	end)
+end
+ 
+----------------------------------------------------------------
+-- ROCKET JUMP (boosted jump with particle burst)
+----------------------------------------------------------------
+ 
+local rocketJumpActive = false
+local rocketJumpConn = nil
+ 
+local function stopRocketJump()
+	rocketJumpActive = false
+	if rocketJumpConn then
+		rocketJumpConn:Disconnect()
+		rocketJumpConn = nil
+	end
+end
+ 
+local function startRocketJump()
+	stopRocketJump()
+	rocketJumpActive = true
+ 
+	local _, hum = getCharacter()
+	if not hum then return end
+ 
+	rocketJumpConn = hum.StateChanged:Connect(function(_, newState)
+		if not rocketJumpActive then return end
+		if newState ~= Enum.HumanoidState.Jumping then return end
+ 
+		local _, curHum, hrp = getCharacter()
+		if not hrp then return end
+ 
+		local attachment = Instance.new("Attachment")
+		attachment.Position = Vector3.new(0, -2.5, 0)
+		attachment.Parent = hrp
+ 
+		local burst = Instance.new("ParticleEmitter")
+		burst.Texture = "rbxasset://textures/particles/fire_main.dds"
+		burst.Rate = 0
+		burst.Lifetime = NumberRange.new(0.3, 0.5)
+		burst.Speed = NumberRange.new(10, 18)
+		burst.SpreadAngle = Vector2.new(25, 25)
+		burst.Size = NumberSequence.new({
+			NumberSequenceKeypoint.new(0, 1.5),
+			NumberSequenceKeypoint.new(1, 0),
+		})
+		burst.Parent = attachment
+		burst:Emit(25)
+		Debris:AddItem(attachment, 1)
+ 
+		local bv = Instance.new("BodyVelocity")
+		bv.MaxForce = Vector3.new(0, 1e5, 0)
+		bv.Velocity = Vector3.new(0, 90, 0)
+		bv.Parent = hrp
+		Debris:AddItem(bv, 0.25)
+	end)
+end
+ 
 ----------------------------------------------------------------
 -- COMMAND IMPLEMENTATIONS
 ----------------------------------------------------------------
-
+ 
 local Commands = {}
-
+ 
 Commands["speed"] = function(args)
 	local value = clamp(args[1], 1, 1000)
 	if not value then return end
@@ -700,7 +1165,7 @@ Commands["speed"] = function(args)
 		hum.WalkSpeed = value
 	end
 end
-
+ 
 Commands["jumppower"] = function(args)
 	local value = clamp(args[1], 1, 1000)
 	if not value then return end
@@ -710,32 +1175,32 @@ Commands["jumppower"] = function(args)
 		hum.JumpPower = value
 	end
 end
-
+ 
 Commands["fly"] = function(args)
 	-- args[1] is "mobile" or "pc" -- movement uses WASD either way here,
 	-- kept as an accepted argument for compatibility with the requested syntax
 	startFly()
 end
-
+ 
 Commands["unfly"] = function(args)
 	stopFly()
 end
-
+ 
 Commands["noclip"] = function(args)
 	startNoclip()
 end
-
+ 
 Commands["clip"] = function(args)
 	stopNoclip()
 end
-
+ 
 Commands["teleport"] = function(args)
 	-- usage: teleport to <player>
 	local targetName = args[1] == "to" and args[2] or args[1]
 	if not targetName then return end
 	local target = findPlayerByName(targetName)
 	if not target then return end
-
+ 
 	local _, _, myHrp = getCharacter()
 	local targetChar = target.Character
 	local targetHrp = targetChar and targetChar:FindFirstChild("HumanoidRootPart")
@@ -743,17 +1208,17 @@ Commands["teleport"] = function(args)
 		myHrp.CFrame = targetHrp.CFrame + Vector3.new(0, 3, 0)
 	end
 end
-
+ 
 Commands["fling"] = function(args)
 	local targetName = args[1]
 	if not targetName then return end
 	local target = findPlayerByName(targetName)
 	if not target then return end
-
+ 
 	local targetChar = target.Character
 	local targetHrp = targetChar and targetChar:FindFirstChild("HumanoidRootPart")
 	if not targetHrp then return end
-
+ 
 	local bv = Instance.new("BodyVelocity")
 	bv.Name = "AdminFlingForce"
 	bv.MaxForce = Vector3.new(1e5, 1e5, 1e5)
@@ -761,12 +1226,12 @@ Commands["fling"] = function(args)
 	bv.Parent = targetHrp
 	Debris:AddItem(bv, 0.6)
 end
-
+ 
 Commands["unfling"] = function(args)
 	local targetName = args[1]
 	local target = targetName and findPlayerByName(targetName)
 	if not target then return end
-
+ 
 	stopLoopFling(target)
 	local char = target.Character
 	local hrp = char and char:FindFirstChild("HumanoidRootPart")
@@ -775,18 +1240,18 @@ Commands["unfling"] = function(args)
 		if bv then bv:Destroy() end
 	end
 end
-
+ 
 Commands["loopfling"] = function(args)
 	local targetName = args[1]
 	local target = targetName and findPlayerByName(targetName)
 	if not target then return end
-
+ 
 	stopLoopFling(target)
 	local conn = RunService.Heartbeat:Connect(function()
 		local char = target.Character
 		local hrp = char and char:FindFirstChild("HumanoidRootPart")
 		if not hrp then return end
-
+ 
 		local bv = hrp:FindFirstChild("AdminLoopFling")
 		if not bv then
 			bv = Instance.new("BodyVelocity")
@@ -798,48 +1263,48 @@ Commands["loopfling"] = function(args)
 	end)
 	loopFlingConns[target] = conn
 end
-
+ 
 Commands["spin"] = function(args)
 	local value = clamp(args[1], 1, 1000)
 	if not value then return end
 	local _, _, hrp = getCharacter()
 	if not hrp then return end
-
+ 
 	local av = hrp:FindFirstChild("AdminSpin")
 	if av then av:Destroy() end
-
+ 
 	av = Instance.new("BodyAngularVelocity")
 	av.Name = "AdminSpin"
 	av.MaxTorque = Vector3.new(0, 1e5, 0)
 	av.AngularVelocity = Vector3.new(0, value, 0)
 	av.Parent = hrp
 end
-
+ 
 Commands["unspin"] = function(args)
 	local _, _, hrp = getCharacter()
 	if not hrp then return end
 	local av = hrp:FindFirstChild("AdminSpin")
 	if av then av:Destroy() end
 end
-
+ 
 Commands["respawn"] = function(args)
 	LocalPlayer:LoadCharacter()
 end
-
+ 
 Commands["invisible"] = function(args)
 	setInvisible(not invisible)
 end
-
+ 
 Commands["visible"] = function(args)
 	setInvisible(false)
 end
-
+ 
 Commands["loopspeed"] = function(args)
 	local value = clamp(args[1], 1, 1000)
 	if not value then return end
 	startLoopSpeed(value)
 end
-
+ 
 Commands["bang"] = function(args)
 	-- cosmetic explosion effect only: BlastPressure 0 means no physics force,
 	-- so this can't actually damage or knock back a player
@@ -848,14 +1313,14 @@ Commands["bang"] = function(args)
 	local char = target.Character
 	local hrp = char and char:FindFirstChild("HumanoidRootPart")
 	if not hrp then return end
-
+ 
 	local explosion = Instance.new("Explosion")
 	explosion.Position = hrp.Position
 	explosion.BlastRadius = 8
 	explosion.BlastPressure = 0
 	explosion.Parent = workspace
 end
-
+ 
 Commands["freecam"] = function(args)
 	if freecamOn then
 		stopFreecam()
@@ -863,73 +1328,109 @@ Commands["freecam"] = function(args)
 		startFreecam()
 	end
 end
-
+ 
 Commands["freeze"] = function(args)
 	local target = resolveTarget(args[1])
 	if not target then return end
 	setFrozen(target, true)
 end
-
+ 
 Commands["unfreeze"] = function(args)
 	local target = resolveTarget(args[1])
 	if not target then return end
 	setFrozen(target, false)
 end
-
+ 
 Commands["follow"] = function(args)
 	local targetName = args[1]
 	local target = targetName and findPlayerByName(targetName)
 	if not target then return end
 	startFollow(target)
 end
-
+ 
 Commands["unfollow"] = function(args)
 	stopFollow()
 end
-
+ 
 Commands["float"] = function(args)
 	startFloat()
 end
-
+ 
 Commands["unfloat"] = function(args)
 	stopFloat()
 end
-
+ 
 Commands["print"] = function(args)
 	print("hello")
 end
-
+ 
+Commands["antivoid"] = function(args)
+	startAntiVoid()
+end
+ 
+Commands["unantivoid"] = function(args)
+	stopAntiVoid()
+end
+ 
+Commands["antilag"] = function(args)
+	startAntiLag()
+end
+ 
+Commands["unantilag"] = function(args)
+	stopAntiLag()
+end
+ 
+Commands["rocketfly"] = function(args)
+	local mode = args[1] and args[1]:lower() or nil
+	if mode ~= "mobile" and mode ~= "pc" then
+		mode = nil
+	end
+	startRocketFly(mode)
+end
+ 
+Commands["unrocketfly"] = function(args)
+	stopRocketFly()
+end
+ 
+Commands["rocketjump"] = function(args)
+	startRocketJump()
+end
+ 
+Commands["unrocketjump"] = function(args)
+	stopRocketJump()
+end
+ 
 Commands["prefix"] = function(args)
 	print("[AdminPanel] Prefix is: " .. PREFIX)
 end
-
+ 
 ----------------------------------------------------------------
 -- COMMAND DISPATCH (shared by chat + panel)
 ----------------------------------------------------------------
-
+ 
 local function sendCommand(fullText)
 	fullText = fullText:gsub("^%s+", ""):gsub("%s+$", "")
 	if fullText == "" then return end
-
+ 
 	if fullText:sub(1, 1) == PREFIX then
 		fullText = fullText:sub(2)
 	end
-
+ 
 	local parts = splitArgs(fullText)
 	if #parts == 0 then return end
-
+ 
 	local commandName = table.remove(parts, 1):lower()
-
+ 
 	local fn = Commands[commandName]
 	if fn then
 		fn(parts)
 	end
 end
-
+ 
 ----------------------------------------------------------------
 -- BUILD COMMAND LIST ROWS
 ----------------------------------------------------------------
-
+ 
 local function clearList()
 	for _, child in ipairs(listFrame:GetChildren()) do
 		if child:IsA("Frame") then
@@ -937,34 +1438,34 @@ local function clearList()
 		end
 	end
 end
-
+ 
 local function populateList(filter)
 	clearList()
 	filter = (filter or ""):lower()
-
+ 
 	local order = 0
 	for _, cmd in ipairs(COMMANDS) do
 		if filter == "" or cmd.name:find(filter, 1, true) or cmd.usage:lower():find(filter, 1, true) then
 			order += 1
-
+ 
 			local row = Instance.new("Frame")
 			row.Size = UDim2.new(1, 0, 0, 46)
 			row.BackgroundColor3 = COLOR_ROW
 			row.LayoutOrder = order
 			row.ZIndex = 10
 			row.Parent = listFrame
-
+ 
 			local rowCorner = Instance.new("UICorner")
 			rowCorner.CornerRadius = UDim.new(0, 8)
 			rowCorner.Parent = row
-
+ 
 			local rowBtn = Instance.new("TextButton")
 			rowBtn.Size = UDim2.new(1, 0, 1, 0)
 			rowBtn.BackgroundTransparency = 1
 			rowBtn.Text = ""
 			rowBtn.ZIndex = 11
 			rowBtn.Parent = row
-
+ 
 			local nameLabel = Instance.new("TextLabel")
 			nameLabel.Size = UDim2.new(1, -16, 0, 18)
 			nameLabel.Position = UDim2.new(0, 10, 0, 5)
@@ -976,7 +1477,7 @@ local function populateList(filter)
 			nameLabel.TextXAlignment = Enum.TextXAlignment.Left
 			nameLabel.ZIndex = 11
 			nameLabel.Parent = row
-
+ 
 			local descLabel = Instance.new("TextLabel")
 			descLabel.Size = UDim2.new(1, -16, 0, 16)
 			descLabel.Position = UDim2.new(0, 10, 0, 23)
@@ -988,7 +1489,7 @@ local function populateList(filter)
 			descLabel.TextXAlignment = Enum.TextXAlignment.Left
 			descLabel.ZIndex = 11
 			descLabel.Parent = row
-
+ 
 			rowBtn.MouseEnter:Connect(function()
 				row.BackgroundColor3 = COLOR_ROW_HOVER
 			end)
@@ -1006,34 +1507,34 @@ local function populateList(filter)
 		end
 	end
 end
-
+ 
 populateList("")
-
+ 
 searchBox:GetPropertyChangedSignal("Text"):Connect(function()
 	populateList(searchBox.Text)
 end)
-
+ 
 ----------------------------------------------------------------
 -- WIRE UP RUN + ENTER KEY
 ----------------------------------------------------------------
-
+ 
 local function runFromInput()
 	sendCommand(inputBox.Text)
 	inputBox.Text = ""
 end
-
+ 
 runBtn.MouseButton1Click:Connect(runFromInput)
-
+ 
 inputBox.FocusLost:Connect(function(enterPressed)
 	if enterPressed then
 		runFromInput()
 	end
 end)
-
+ 
 ----------------------------------------------------------------
 -- TOGGLE PANEL
 ----------------------------------------------------------------
-
+ 
 local open = false
 local function setOpen(state)
 	open = state
@@ -1042,21 +1543,21 @@ local function setOpen(state)
 		searchBox:CaptureFocus()
 	end
 end
-
+ 
 toggleBtn.MouseButton1Click:Connect(function()
 	setOpen(not open)
 end)
-
+ 
 ----------------------------------------------------------------
 -- CHAT PREFIX SUPPORT ( "?speed 50" typed in normal chat )
 ----------------------------------------------------------------
-
+ 
 LocalPlayer.Chatted:Connect(function(message)
 	if message:sub(1, 1) == PREFIX then
 		sendCommand(message)
 	end
 end)
-
+ 
 if TextChatService and TextChatService.ChatVersion == Enum.ChatVersion.TextChatService then
 	local ok = pcall(function()
 		TextChatService.SendingMessage:Connect(function(textChatMessage)
@@ -1067,24 +1568,24 @@ if TextChatService and TextChatService.ChatVersion == Enum.ChatVersion.TextChatS
 		end)
 	end)
 end
-
+ 
 ----------------------------------------------------------------
 -- FLY KEY TRACKING
 ----------------------------------------------------------------
-
+ 
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
 	if gameProcessed then return end
 	flyKeysDown[input.KeyCode] = true
 end)
-
+ 
 UserInputService.InputEnded:Connect(function(input, gameProcessed)
 	flyKeysDown[input.KeyCode] = nil
 end)
-
+ 
 ----------------------------------------------------------------
 -- RESET ON RESPAWN
 ----------------------------------------------------------------
-
+ 
 LocalPlayer.CharacterAdded:Connect(function(char)
 	flying = false
 	noclipping = false
@@ -1093,7 +1594,17 @@ LocalPlayer.CharacterAdded:Connect(function(char)
 	stopFollow()
 	stopFloat()
 	stopLoopSpeed()
-
+	stopRocketFly()
+	lastSafePosition = nil
+ 
+	-- rocket jump is tied to the Humanoid instance, which is replaced on respawn
+	if rocketJumpActive then
+		task.defer(function()
+			char:WaitForChild("Humanoid", 5)
+			startRocketJump()
+		end)
+	end
+ 
 	-- re-apply invisibility to the new character if it was toggled on before respawning
 	if invisible then
 		task.defer(function()
@@ -1102,5 +1613,5 @@ LocalPlayer.CharacterAdded:Connect(function(char)
 		end)
 	end
 end)
-
+ 
 print("[AdminPanel] Loaded. Prefix: " .. PREFIX)
