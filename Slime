@@ -1,0 +1,145 @@
+local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
+
+local Window = Rayfield:CreateWindow({
+    Name = "Mobile",
+    Icon = 0,
+    LoadingTitle = "Mobile Hub",
+    LoadingSubtitle = "Local Utility",
+    Theme = "Default",
+
+    DisableRayfieldPrompts = false,
+    DisableBuildWarnings = false,
+
+    ConfigurationSaving = {
+        Enabled = false,
+    },
+
+    KeySystem = true,
+    KeySettings = {
+        Title = "Key System",
+        Subtitle = "Enter Key",
+        Note = "Key: MobileExploits",
+        FileName = "MobileKey",
+        SaveKey = false,
+        GrabKeyFromSite = false,
+        Key = {"MobileExploits"}
+    }
+})
+
+local Tab = Window:CreateTab("Main", 4483362458)
+
+local teleportLoop = false
+
+Tab:CreateToggle({
+    Name = "World 1 Wins",
+    CurrentValue = false,
+    Flag = "LoopTeleport",
+    Callback = function(Value)
+        teleportLoop = Value
+
+        task.spawn(function()
+            while teleportLoop do
+                local character = game.Players.LocalPlayer.Character
+                if character then
+                    local hrp = character:FindFirstChild("HumanoidRootPart")
+                    if hrp then
+                        hrp.CFrame = CFrame.new(
+                            1322.14233, 193.503555, -4760.36621,
+                            0, 0, -1,
+                            0, 1, 0,
+                            1, 0, 0
+                        )
+                    end
+                end
+                task.wait(0.05)
+            end
+        end)
+    end,
+})
+
+local teleportLoop = false
+
+Tab:CreateToggle({
+    Name = "World 1 Wins Gamepass",
+    CurrentValue = false,
+    Flag = "LoopTeleport",
+    Callback = function(Value)
+        teleportLoop = Value
+
+        task.spawn(function()
+            while teleportLoop do
+                local character = game.Players.LocalPlayer.Character
+                if character then
+                    local hrp = character:FindFirstChild("HumanoidRootPart")
+                    if hrp then
+                        hrp.CFrame = CFrame.new(
+                            1331.93823, 193.478043, -4760.36963,
+                            -1.1920929e-07, -0, -1.00000012,
+                            0, 1, -0,
+                            1.00000012, 0, -1.1920929e-07
+                        )
+                    end
+                end
+                task.wait(0.05)
+            end
+        end)
+    end,
+})
+
+local teleportLoop = false
+
+Tab:CreateToggle({
+    Name = "World 2 Wins",
+    CurrentValue = false,
+    Flag = "LoopTeleport",
+    Callback = function(Value)
+        teleportLoop = Value
+
+        task.spawn(function()
+            while teleportLoop do
+                local character = game.Players.LocalPlayer.Character
+                if character then
+                    local hrp = character:FindFirstChild("HumanoidRootPart")
+                    if hrp then
+                        hrp.CFrame = CFrame.new(
+                            -1340.90515, 239.281464, 6438.05811,
+                            -1, 0, 0,
+                            0, 1, 0,
+                            0, 0, -1
+                        )
+                    end
+                end
+                task.wait(0.05)
+            end
+        end)
+    end,
+})
+
+local teleportLoop = false
+
+Tab:CreateToggle({
+    Name = "World 2 Wins Gamepass",
+    CurrentValue = false,
+    Flag = "LoopTeleport",
+    Callback = function(Value)
+        teleportLoop = Value
+
+        task.spawn(function()
+            while teleportLoop do
+                local character = game.Players.LocalPlayer.Character
+                if character then
+                    local hrp = character:FindFirstChild("HumanoidRootPart")
+                    if hrp then
+hrp.CFrame = CFrame.new(
+    -1340.90173, 239.255951, 6447.854,
+    -1, 0, 0,
+    0, 1, 0,
+    0, 0, -1
+)
+                    end
+                end
+                task.wait(0.05)
+            end
+        end)
+    end,
+})
