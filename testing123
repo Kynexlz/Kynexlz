@@ -23,6 +23,8 @@ local COMMANDS = {
 	{ name = "speed",     usage = "speed [1-1000]",        desc = "Set your walk speed",              category = "Movement" },
 	{ name = "loopspeed", usage = "loopspeed [1-1000]",    desc = "Continuously force your speed",    category = "Movement" },
 	{ name = "jumppower", usage = "jumppower [1-1000]",    desc = "Set your jump power",               category = "Movement" },
+	{ name = "loopjumppower", usage = "loopjumppower [1-1000]", desc = "Continuously force your jump power", category = "Movement" },
+	{ name = "unloopjumppower", usage = "unloopjumppower", desc = "Stop forcing jump power",            category = "Movement" },
 	{ name = "fly",       usage = "fly [mobile/pc]",       desc = "Toggle fly mode",                   category = "Movement" },
 	{ name = "unfly",     usage = "unfly",                 desc = "Turn fly off",                      category = "Movement" },
 	{ name = "rocketfly",   usage = "rocketfly [mobile/pc]", desc = "Fly with rocket particles + tilt", category = "Movement" },
@@ -53,6 +55,8 @@ local COMMANDS = {
 	{ name = "unantilag",  usage = "unantilag",             desc = "Restore normal visuals",              category = "Visual" },
  
 	{ name = "respawn",   usage = "respawn",                desc = "Respawn your character",             category = "Utility" },
+	{ name = "copyuserid",usage = "copyuserid [username]",  desc = "Look up any player's UserId",         category = "Utility" },
+	{ name = "copygameid",usage = "copygameid",              desc = "Show this game's PlaceId/GameId",    category = "Utility" },
 	{ name = "antivoid",   usage = "antivoid",              desc = "Auto-recover if you fall into the void", category = "Utility" },
 	{ name = "unantivoid", usage = "unantivoid",            desc = "Turn antivoid off",                   category = "Utility" },
 	{ name = "print",     usage = "print",                  desc = "Prints hello to console",             category = "Utility" },
@@ -147,6 +151,7 @@ panelShadow.Size = UDim2.new(0, 300, 0, 400)
 panelShadow.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
 panelShadow.BackgroundTransparency = 0.55
 panelShadow.ZIndex = 8
+panelShadow.Visible = false
 panelShadow.Parent = screenGui
  
 local panelShadowCorner = Instance.new("UICorner")
@@ -581,6 +586,157 @@ local function splitArgs(str)
 	return args
 end
  
+-- Posts a message that only YOU can see, in the chat window, using Roblox's
+-- built-in system-message channel. Nothing is sent to the server or other players.
+local function chatNotify(text, color)
+	color = color or Color3.fromRGB(140, 255, 140) -- light green
+	pcall(function()
+		game:GetService("StarterGui"):SetCore("ChatMakeSystemMessage", {
+			Text = "[Krylonix] " .. text,
+			Color = color,
+			Font = Enum.Font.SourceSansBold,
+		})
+	end)
+end
+ 
+-- forward declaration: `fly` and `rocketfly` cancel each other out, so each needs
+-- to be able to call the other's stop function regardless of definition order below
+local stopRocketFly
+ 
+----------------------------------------------------------------
+-- SHARED FLYING ANIMATION (arm pose + on-screen mobile buttons)
+-- used by both `fly` and `rocketfly` so they look/feel consistent
+----------------------------------------------------------------
+ 
+local flyPoseOriginals = {} -- [character] = { [motor] = originalC0 }
+ 
+local function getFlyPoseMotors(character)
+	local hum = character:FindFirstChildOfClass("Humanoid")
+	if not hum then return nil end
+	local motors = {}
+	if hum.RigType == Enum.HumanoidRigType.R15 then
+		local upperTorso = character:FindFirstChild("UpperTorso")
+		if upperTorso then
+			motors.leftShoulder = upperTorso:FindFirstChild("LeftShoulder")
+			motors.rightShoulder = upperTorso:FindFirstChild("RightShoulder")
+		end
+		local lowerTorso = character:FindFirstChild("LowerTorso")
+		if lowerTorso then
+			motors.waist = lowerTorso:FindFirstChild("Waist")
+		end
+	else
+		local torso = character:FindFirstChild("Torso")
+		if torso then
+			motors.leftShoulder = torso:FindFirstChild("Left Shoulder")
+			motors.rightShoulder = torso:FindFirstChild("Right Shoulder")
+		end
+	end
+	return motors
+end
+ 
+local function setFlyPose(character, enabled)
+	if not character then return end
+	local motors = getFlyPoseMotors(character)
+	if not motors then return end
+ 
+	if enabled then
+		flyPoseOriginals[character] = flyPoseOriginals[character] or {}
+		local originals = flyPoseOriginals[character]
+ 
+		for _, motor in pairs(motors) do
+			if motor and not originals[motor] then
+				originals[motor] = motor.C0
+			end
+		end
+ 
+		if motors.leftShoulder then
+			local base = originals[motors.leftShoulder]
+			TweenService:Create(motors.leftShoulder, TweenInfo.new(0.3), {
+				C0 = base * CFrame.Angles(math.rad(-100), 0, math.rad(-15)),
+			}):Play()
+		end
+		if motors.rightShoulder then
+			local base = originals[motors.rightShoulder]
+			TweenService:Create(motors.rightShoulder, TweenInfo.new(0.3), {
+				C0 = base * CFrame.Angles(math.rad(-100), 0, math.rad(15)),
+			}):Play()
+		end
+		if motors.waist then
+			local base = originals[motors.waist]
+			TweenService:Create(motors.waist, TweenInfo.new(0.3), {
+				C0 = base * CFrame.Angles(math.rad(15), 0, 0),
+			}):Play()
+		end
+	else
+		local originals = flyPoseOriginals[character]
+		if originals then
+			for motor, c0 in pairs(originals) do
+				if motor and motor.Parent then
+					TweenService:Create(motor, TweenInfo.new(0.2), { C0 = c0 }):Play()
+				end
+			end
+			flyPoseOriginals[character] = nil
+		end
+	end
+end
+ 
+local flyMobileUp = false
+local flyMobileDown = false
+local flyControlsGui = nil
+ 
+local function makeFlyControlButtons()
+	if flyControlsGui then return flyControlsGui end
+ 
+	local gui = Instance.new("ScreenGui")
+	gui.Name = "FlyControls"
+	gui.ResetOnSpawn = false
+	gui.Parent = LocalPlayer.PlayerGui
+ 
+	local function makeBtn(text, posY)
+		local btn = Instance.new("TextButton")
+		btn.Size = UDim2.new(0, 60, 0, 60)
+		btn.Position = UDim2.new(1, -80, 1, posY)
+		btn.AnchorPoint = Vector2.new(0, 0)
+		btn.BackgroundColor3 = COLOR_PANEL
+		btn.Text = text
+		btn.Font = FONT_BOLD
+		btn.TextSize = 22
+		btn.TextColor3 = COLOR_ACCENT
+		btn.AutoButtonColor = false
+		btn.Parent = gui
+		local c = Instance.new("UICorner")
+		c.CornerRadius = UDim.new(1, 0)
+		c.Parent = btn
+		local s = Instance.new("UIStroke")
+		s.Color = COLOR_ACCENT
+		s.Transparency = 0.6
+		s.Parent = btn
+		return btn
+	end
+ 
+	local upBtn = makeBtn("▲", -160)
+	local downBtn = makeBtn("▼", -90)
+ 
+	upBtn.MouseButton1Down:Connect(function() flyMobileUp = true end)
+	upBtn.MouseButton1Up:Connect(function() flyMobileUp = false end)
+	upBtn.TouchEnded:Connect(function() flyMobileUp = false end)
+	downBtn.MouseButton1Down:Connect(function() flyMobileDown = true end)
+	downBtn.MouseButton1Up:Connect(function() flyMobileDown = false end)
+	downBtn.TouchEnded:Connect(function() flyMobileDown = false end)
+ 
+	flyControlsGui = gui
+	return gui
+end
+ 
+local function destroyFlyControlButtons()
+	if flyControlsGui then
+		flyControlsGui:Destroy()
+		flyControlsGui = nil
+	end
+	flyMobileUp = false
+	flyMobileDown = false
+end
+ 
 ----------------------------------------------------------------
 -- FLY / NOCLIP STATE
 ----------------------------------------------------------------
@@ -588,6 +744,7 @@ end
 local flying = false
 local flyConn = nil
 local flyKeysDown = {}
+local flyMode = nil
  
 local noclipping = false
 local noclipConn = nil
@@ -598,7 +755,7 @@ local function stopFly()
 		flyConn:Disconnect()
 		flyConn = nil
 	end
-	local _, hum, hrp = getCharacter()
+	local char, hum, hrp = getCharacter()
 	if hrp then
 		local bv = hrp:FindFirstChild("AdminFlyForce")
 		local bg = hrp:FindFirstChild("AdminFlyGyro")
@@ -608,14 +765,20 @@ local function stopFly()
 	if hum then
 		hum.PlatformStand = false
 	end
+	if char then
+		setFlyPose(char, false)
+	end
+	destroyFlyControlButtons()
 end
  
-local function startFly()
+local function startFly(mode)
 	local char, hum, hrp = getCharacter()
 	if not hrp then return end
  
 	stopFly()
+	stopRocketFly()
 	flying = true
+	flyMode = mode or ((UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled) and "mobile" or "pc")
  
 	local bv = Instance.new("BodyVelocity")
 	bv.Name = "AdminFlyForce"
@@ -631,6 +794,11 @@ local function startFly()
 	bg.Parent = hrp
  
 	hum.PlatformStand = true
+	setFlyPose(char, true)
+ 
+	if flyMode == "mobile" then
+		makeFlyControlButtons()
+	end
  
 	local speed = 50
  
@@ -642,17 +810,24 @@ local function startFly()
 			return
 		end
  
-		local camera = workspace.CurrentCamera
-		local moveVector = Vector3.new(0, 0, 0)
-		if camera then
-			local lookVector = camera.CFrame.LookVector
-			local rightVector = camera.CFrame.RightVector
-			if flyKeysDown[Enum.KeyCode.W] then moveVector += lookVector end
-			if flyKeysDown[Enum.KeyCode.S] then moveVector -= lookVector end
-			if flyKeysDown[Enum.KeyCode.A] then moveVector -= rightVector end
-			if flyKeysDown[Enum.KeyCode.D] then moveVector += rightVector end
-			if flyKeysDown[Enum.KeyCode.Space] then moveVector += Vector3.new(0, 1, 0) end
-			if flyKeysDown[Enum.KeyCode.LeftShift] then moveVector -= Vector3.new(0, 1, 0) end
+		local moveVector
+		if flyMode == "mobile" then
+			moveVector = curHum.MoveDirection
+			if flyMobileUp then moveVector += Vector3.new(0, 1, 0) end
+			if flyMobileDown then moveVector -= Vector3.new(0, 1, 0) end
+		else
+			local camera = workspace.CurrentCamera
+			moveVector = Vector3.new(0, 0, 0)
+			if camera then
+				local lookVector = camera.CFrame.LookVector
+				local rightVector = camera.CFrame.RightVector
+				if flyKeysDown[Enum.KeyCode.W] then moveVector += lookVector end
+				if flyKeysDown[Enum.KeyCode.S] then moveVector -= lookVector end
+				if flyKeysDown[Enum.KeyCode.A] then moveVector -= rightVector end
+				if flyKeysDown[Enum.KeyCode.D] then moveVector += rightVector end
+				if flyKeysDown[Enum.KeyCode.Space] then moveVector += Vector3.new(0, 1, 0) end
+				if flyKeysDown[Enum.KeyCode.LeftShift] then moveVector -= Vector3.new(0, 1, 0) end
+			end
 		end
  
 		if moveVector.Magnitude > 0 then
@@ -664,8 +839,11 @@ local function startFly()
 		if curBv then
 			curBv.Velocity = moveVector * speed
 		end
-		if curBg and camera then
-			curBg.CFrame = CFrame.new(curHrp.Position, curHrp.Position + camera.CFrame.LookVector)
+		if curBg and moveVector.Magnitude > 0.05 then
+			local flatMove = Vector3.new(moveVector.X, 0, moveVector.Z)
+			local lookTarget = curHrp.Position + (flatMove.Magnitude > 0.05 and flatMove or Vector3.new(0, 0, -1))
+			local tilt = math.clamp(moveVector.Y, -1, 1) * math.rad(20)
+			curBg.CFrame = CFrame.new(curHrp.Position, lookTarget) * CFrame.Angles(-tilt, 0, 0)
 		end
 	end)
 end
@@ -851,6 +1029,33 @@ local function startLoopSpeed(value)
 		local _, hum = getCharacter()
 		if hum and loopSpeedValue then
 			hum.WalkSpeed = loopSpeedValue
+		end
+	end)
+end
+ 
+----------------------------------------------------------------
+-- LOOPJUMPPOWER STATE
+----------------------------------------------------------------
+ 
+local loopJumpPowerConn = nil
+local loopJumpPowerValue = nil
+ 
+local function stopLoopJumpPower()
+	if loopJumpPowerConn then
+		loopJumpPowerConn:Disconnect()
+		loopJumpPowerConn = nil
+	end
+	loopJumpPowerValue = nil
+end
+ 
+local function startLoopJumpPower(value)
+	stopLoopJumpPower()
+	loopJumpPowerValue = value
+	loopJumpPowerConn = RunService.Heartbeat:Connect(function()
+		local _, hum = getCharacter()
+		if hum and loopJumpPowerValue then
+			hum.UseJumpPower = true
+			hum.JumpPower = loopJumpPowerValue
 		end
 	end)
 end
@@ -1058,9 +1263,6 @@ end
  
 local rocketFlying = false
 local rocketFlyConn = nil
-local rocketMobileUp = false
-local rocketMobileDown = false
-local rocketFlyButtonsGui = nil
  
 local function makeRocketExhaust(hrp)
 	local attachment = Instance.new("Attachment")
@@ -1084,55 +1286,13 @@ local function makeRocketExhaust(hrp)
 	return attachment
 end
  
-local function makeRocketMobileButtons()
-	local gui = Instance.new("ScreenGui")
-	gui.Name = "RocketFlyControls"
-	gui.ResetOnSpawn = false
-	gui.Parent = LocalPlayer.PlayerGui
- 
-	local function makeBtn(text, posY)
-		local btn = Instance.new("TextButton")
-		btn.Size = UDim2.new(0, 60, 0, 60)
-		btn.Position = UDim2.new(1, -80, 1, posY)
-		btn.AnchorPoint = Vector2.new(0, 0)
-		btn.BackgroundColor3 = COLOR_PANEL
-		btn.Text = text
-		btn.Font = FONT_BOLD
-		btn.TextSize = 22
-		btn.TextColor3 = COLOR_WHITE
-		btn.AutoButtonColor = false
-		btn.Parent = gui
-		local c = Instance.new("UICorner")
-		c.CornerRadius = UDim.new(1, 0)
-		c.Parent = btn
-		return btn
-	end
- 
-	local upBtn = makeBtn("▲", -160)
-	local downBtn = makeBtn("▼", -90)
- 
-	upBtn.MouseButton1Down:Connect(function() rocketMobileUp = true end)
-	upBtn.MouseButton1Up:Connect(function() rocketMobileUp = false end)
-	upBtn.TouchLongPress:Connect(function() end)
-	downBtn.MouseButton1Down:Connect(function() rocketMobileDown = true end)
-	downBtn.MouseButton1Up:Connect(function() rocketMobileDown = false end)
- 
-	return gui
-end
- 
-local function stopRocketFly()
+function stopRocketFly()
 	rocketFlying = false
-	rocketMobileUp = false
-	rocketMobileDown = false
 	if rocketFlyConn then
 		rocketFlyConn:Disconnect()
 		rocketFlyConn = nil
 	end
-	if rocketFlyButtonsGui then
-		rocketFlyButtonsGui:Destroy()
-		rocketFlyButtonsGui = nil
-	end
-	local _, hum, hrp = getCharacter()
+	local char, hum, hrp = getCharacter()
 	if hrp then
 		local bv = hrp:FindFirstChild("RocketFlyForce")
 		local bg = hrp:FindFirstChild("RocketFlyGyro")
@@ -1144,6 +1304,10 @@ local function stopRocketFly()
 	if hum then
 		hum.PlatformStand = false
 	end
+	if char then
+		setFlyPose(char, false)
+	end
+	destroyFlyControlButtons()
 end
  
 local function startRocketFly(mode)
@@ -1172,9 +1336,10 @@ local function startRocketFly(mode)
  
 	hum.PlatformStand = true
 	makeRocketExhaust(hrp)
+	setFlyPose(char, true)
  
 	if mode == "mobile" then
-		rocketFlyButtonsGui = makeRocketMobileButtons()
+		makeFlyControlButtons()
 	end
  
 	local speed = 65
@@ -1192,8 +1357,8 @@ local function startRocketFly(mode)
 			-- horizontal movement comes from the default touch thumbstick (Humanoid.MoveDirection),
 			-- vertical comes from the on-screen up/down buttons
 			moveVector = curHum.MoveDirection
-			if rocketMobileUp then moveVector += Vector3.new(0, 1, 0) end
-			if rocketMobileDown then moveVector -= Vector3.new(0, 1, 0) end
+			if flyMobileUp then moveVector += Vector3.new(0, 1, 0) end
+			if flyMobileDown then moveVector -= Vector3.new(0, 1, 0) end
 		else
 			local camera = workspace.CurrentCamera
 			moveVector = Vector3.new(0, 0, 0)
@@ -1252,9 +1417,11 @@ local function startRocketJump()
 	local _, hum = getCharacter()
 	if not hum then return end
  
-	rocketJumpConn = hum.StateChanged:Connect(function(_, newState)
-		if not rocketJumpActive then return end
-		if newState ~= Enum.HumanoidState.Jumping then return end
+	-- Humanoid.Jumping fires reliably every time a jump begins (with isJumping = true).
+	-- StateChanged/Enum.HumanoidState.Jumping was used before but is unreliable — many
+	-- rigs skip straight to Freefall or don't re-enter the Jumping state on repeat jumps.
+	rocketJumpConn = hum.Jumping:Connect(function(isJumping)
+		if not rocketJumpActive or not isJumping then return end
  
 		local _, curHum, hrp = getCharacter()
 		if not hrp then return end
@@ -1274,14 +1441,14 @@ local function startRocketJump()
 			NumberSequenceKeypoint.new(1, 0),
 		})
 		burst.Parent = attachment
-		burst:Emit(25)
+		burst:Emit(30)
 		Debris:AddItem(attachment, 1)
  
 		local bv = Instance.new("BodyVelocity")
 		bv.MaxForce = Vector3.new(0, 1e5, 0)
 		bv.Velocity = Vector3.new(0, 90, 0)
 		bv.Parent = hrp
-		Debris:AddItem(bv, 0.25)
+		Debris:AddItem(bv, 0.3)
 	end)
 end
  
@@ -1304,6 +1471,7 @@ end
 Commands["jumppower"] = function(args)
 	local value = clamp(args[1], 1, 1000)
 	if not value then return end
+	stopLoopJumpPower()
 	local _, hum = getCharacter()
 	if hum then
 		hum.UseJumpPower = true
@@ -1311,10 +1479,23 @@ Commands["jumppower"] = function(args)
 	end
 end
  
+Commands["loopjumppower"] = function(args)
+	local value = clamp(args[1], 1, 1000)
+	if not value then return end
+	startLoopJumpPower(value)
+end
+ 
+Commands["unloopjumppower"] = function(args)
+	stopLoopJumpPower()
+end
+ 
 Commands["fly"] = function(args)
-	-- args[1] is "mobile" or "pc" -- movement uses WASD either way here,
-	-- kept as an accepted argument for compatibility with the requested syntax
-	startFly()
+	-- args[1] can be "mobile" or "pc"; if omitted it's auto-detected
+	local mode = args[1] and args[1]:lower() or nil
+	if mode ~= "mobile" and mode ~= "pc" then
+		mode = nil
+	end
+	startFly(mode)
 end
  
 Commands["unfly"] = function(args)
@@ -1423,7 +1604,50 @@ Commands["unspin"] = function(args)
 end
  
 Commands["respawn"] = function(args)
-	LocalPlayer:LoadCharacter()
+	-- LoadCharacter is restricted to the server in some places; fall back to
+	-- a normal death (which triggers the game's own auto-respawn) if it's blocked
+	local ok = pcall(function()
+		LocalPlayer:LoadCharacter()
+	end)
+	if not ok then
+		local _, hum = getCharacter()
+		if hum then
+			hum.Health = 0
+		end
+	end
+end
+ 
+Commands["copyuserid"] = function(args)
+	local username = args[1]
+	if not username then
+		chatNotify("Usage: copyuserid [username]")
+		return
+	end
+ 
+	local ok, userId = pcall(function()
+		return Players:GetUserIdFromNameAsync(username)
+	end)
+ 
+	if ok and userId then
+		-- if running somewhere that exposes a clipboard function, copy it there too
+		if typeof(setclipboard) == "function" then
+			pcall(setclipboard, tostring(userId))
+		end
+		chatNotify(username .. "'s UserId: " .. tostring(userId))
+	else
+		chatNotify("Could not find a user named \"" .. username .. "\"")
+	end
+end
+ 
+Commands["copygameid"] = function(args)
+	local placeId = tostring(game.PlaceId)
+	local universeId = tostring(game.GameId)
+ 
+	if typeof(setclipboard) == "function" then
+		pcall(setclipboard, placeId)
+	end
+ 
+	chatNotify("PlaceId: " .. placeId .. " | GameId: " .. universeId)
 end
  
 Commands["invisible"] = function(args)
@@ -1810,7 +2034,9 @@ LocalPlayer.CharacterAdded:Connect(function(char)
 	stopFollow()
 	stopFloat()
 	stopLoopSpeed()
+	stopLoopJumpPower()
 	stopRocketFly()
+	destroyFlyControlButtons()
 	lastSafePosition = nil
  
 	-- rocket jump is tied to the Humanoid instance, which is replaced on respawn
