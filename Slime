@@ -1,10 +1,10 @@
 local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
 
 local Window = Rayfield:CreateWindow({
-    Name = "Mobile",
+    Name = "Wins hub UI",
     Icon = 0,
-    LoadingTitle = "Mobile Hub",
-    LoadingSubtitle = "Local Utility",
+    LoadingTitle = "Loading...",
+    LoadingSubtitle = "Made by MobileExploits",
     Theme = "Default",
 
     DisableRayfieldPrompts = false,
