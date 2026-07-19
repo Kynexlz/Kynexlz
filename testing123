@@ -1,8 +1,10 @@
+ 
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local TextChatService = game:GetService("TextChatService")
 local Debris = game:GetService("Debris")
+local TweenService = game:GetService("TweenService")
  
 local LocalPlayer = Players.LocalPlayer
  
@@ -14,57 +16,61 @@ local PREFIX = "?"
 local CORNER = "TopRight" -- "TopLeft" | "TopRight" | "BottomLeft" | "BottomRight"
  
 ----------------------------------------------------------------
--- COMMAND LIST (label + hint shown in the panel)
+-- COMMAND LIST (label + hint shown in the panel, grouped by category)
 ----------------------------------------------------------------
  
 local COMMANDS = {
-	{ name = "speed",     usage = "speed [1-1000]",        desc = "Set your walk speed" },
-	{ name = "jumppower", usage = "jumppower [1-1000]",     desc = "Set your jump power" },
-	{ name = "fly",       usage = "fly [mobile/pc]",        desc = "Toggle fly mode" },
-	{ name = "unfly",     usage = "unfly",                  desc = "Turn fly off" },
-	{ name = "noclip",    usage = "noclip",                 desc = "Walk through walls" },
-	{ name = "clip",      usage = "clip",                   desc = "Turn noclip off" },
-	{ name = "teleport",  usage = "teleport to [player]",   desc = "Teleport to a player" },
-	{ name = "fling",     usage = "fling [player]",         desc = "Fling a player" },
-	{ name = "unfling",   usage = "unfling [player]",       desc = "Stop fling effects on a player" },
-	{ name = "loopfling", usage = "loopfling [player]",     desc = "Repeatedly fling a player" },
-	{ name = "spin",      usage = "spin [1-1000]",          desc = "Spin yourself" },
-	{ name = "unspin",    usage = "unspin",                 desc = "Stop spinning" },
-	{ name = "respawn",   usage = "respawn",                desc = "Respawn your character" },
-	{ name = "invisible", usage = "invisible",              desc = "Toggle invisibility" },
-	{ name = "visible",   usage = "visible",                desc = "Turn invisibility off" },
-	{ name = "loopspeed", usage = "loopspeed [1-1000]",     desc = "Continuously force your speed" },
-	{ name = "bang",      usage = "bang [player]",          desc = "Cosmetic explosion effect on a player" },
-	{ name = "freecam",   usage = "freecam",                desc = "Toggle free-flying camera" },
-	{ name = "freeze",    usage = "freeze [player]",        desc = "Freeze a player in place" },
-	{ name = "unfreeze",  usage = "unfreeze [player]",      desc = "Unfreeze a player" },
-	{ name = "follow",    usage = "follow [player]",        desc = "Orbit a player with fx" },
-	{ name = "unfollow",  usage = "unfollow",               desc = "Stop following" },
-	{ name = "float",     usage = "float",                  desc = "Hover in place" },
-	{ name = "unfloat",   usage = "unfloat",                desc = "Stop floating" },
-	{ name = "antivoid",   usage = "antivoid",              desc = "Auto-recover if you fall into the void" },
-	{ name = "unantivoid", usage = "unantivoid",            desc = "Turn antivoid off" },
-	{ name = "antilag",    usage = "antilag",               desc = "Reduce visual effects for performance" },
-	{ name = "unantilag",  usage = "unantilag",             desc = "Restore normal visuals" },
-	{ name = "rocketfly",  usage = "rocketfly [mobile/pc]", desc = "Fly with rocket particles + tilt" },
-	{ name = "unrocketfly",usage = "unrocketfly",           desc = "Turn rocket fly off" },
-	{ name = "rocketjump", usage = "rocketjump",            desc = "Boosted jump with particle burst" },
-	{ name = "unrocketjump", usage = "unrocketjump",        desc = "Turn rocket jump off" },
-	{ name = "print",     usage = "print",                  desc = "Prints hello to console" },
-	{ name = "prefix",    usage = "prefix",                 desc = "Shows the command prefix" },
+	{ name = "speed",     usage = "speed [1-1000]",        desc = "Set your walk speed",              category = "Movement" },
+	{ name = "loopspeed", usage = "loopspeed [1-1000]",    desc = "Continuously force your speed",    category = "Movement" },
+	{ name = "jumppower", usage = "jumppower [1-1000]",    desc = "Set your jump power",               category = "Movement" },
+	{ name = "fly",       usage = "fly [mobile/pc]",       desc = "Toggle fly mode",                   category = "Movement" },
+	{ name = "unfly",     usage = "unfly",                 desc = "Turn fly off",                      category = "Movement" },
+	{ name = "rocketfly",   usage = "rocketfly [mobile/pc]", desc = "Fly with rocket particles + tilt", category = "Movement" },
+	{ name = "unrocketfly", usage = "unrocketfly",         desc = "Turn rocket fly off",                category = "Movement" },
+	{ name = "rocketjump",   usage = "rocketjump",         desc = "Boosted jump with particle burst",   category = "Movement" },
+	{ name = "unrocketjump", usage = "unrocketjump",       desc = "Turn rocket jump off",                category = "Movement" },
+	{ name = "noclip",    usage = "noclip",                desc = "Walk through walls",                category = "Movement" },
+	{ name = "clip",      usage = "clip",                  desc = "Turn noclip off",                   category = "Movement" },
+	{ name = "float",     usage = "float",                 desc = "Hover in place",                    category = "Movement" },
+	{ name = "unfloat",   usage = "unfloat",                desc = "Stop floating",                     category = "Movement" },
+	{ name = "spin",      usage = "spin [1-1000]",          desc = "Spin yourself",                     category = "Movement" },
+	{ name = "unspin",    usage = "unspin",                 desc = "Stop spinning",                     category = "Movement" },
+	{ name = "freecam",   usage = "freecam",                desc = "Toggle free-flying camera",         category = "Movement" },
+ 
+	{ name = "teleport",  usage = "teleport to [player]",   desc = "Teleport to a player",              category = "Player" },
+	{ name = "fling",     usage = "fling [player]",         desc = "Fling a player",                     category = "Player" },
+	{ name = "unfling",   usage = "unfling [player]",       desc = "Stop fling effects on a player",    category = "Player" },
+	{ name = "loopfling", usage = "loopfling [player]",     desc = "Repeatedly fling a player",         category = "Player" },
+	{ name = "freeze",    usage = "freeze [player]",        desc = "Freeze a player in place",           category = "Player" },
+	{ name = "unfreeze",  usage = "unfreeze [player]",      desc = "Unfreeze a player",                  category = "Player" },
+	{ name = "follow",    usage = "follow [player]",        desc = "Orbit a player with fx",             category = "Player" },
+	{ name = "unfollow",  usage = "unfollow",               desc = "Stop following",                     category = "Player" },
+	{ name = "bang",      usage = "bang [player]",          desc = "Cosmetic explosion effect",         category = "Player" },
+ 
+	{ name = "invisible", usage = "invisible",              desc = "Toggle invisibility",                category = "Visual" },
+	{ name = "visible",   usage = "visible",                desc = "Turn invisibility off",              category = "Visual" },
+	{ name = "antilag",    usage = "antilag",               desc = "Reduce visual effects for performance", category = "Visual" },
+	{ name = "unantilag",  usage = "unantilag",             desc = "Restore normal visuals",              category = "Visual" },
+ 
+	{ name = "respawn",   usage = "respawn",                desc = "Respawn your character",             category = "Utility" },
+	{ name = "antivoid",   usage = "antivoid",              desc = "Auto-recover if you fall into the void", category = "Utility" },
+	{ name = "unantivoid", usage = "unantivoid",            desc = "Turn antivoid off",                   category = "Utility" },
+	{ name = "print",     usage = "print",                  desc = "Prints hello to console",             category = "Utility" },
+	{ name = "prefix",    usage = "prefix",                 desc = "Shows the command prefix",            category = "Utility" },
 }
  
 ----------------------------------------------------------------
 -- THEME
 ----------------------------------------------------------------
  
-local COLOR_BG        = Color3.fromRGB(12, 12, 12)
-local COLOR_PANEL     = Color3.fromRGB(18, 18, 18)
-local COLOR_ROW       = Color3.fromRGB(24, 24, 24)
-local COLOR_ROW_HOVER = Color3.fromRGB(34, 34, 34)
-local COLOR_WHITE     = Color3.fromRGB(255, 255, 255)
-local COLOR_GRAY      = Color3.fromRGB(150, 150, 150)
-local COLOR_STROKE    = Color3.fromRGB(45, 45, 45)
+local COLOR_BG        = Color3.fromRGB(15, 15, 17)
+local COLOR_PANEL     = Color3.fromRGB(20, 20, 23)
+local COLOR_ROW       = Color3.fromRGB(26, 26, 30)
+local COLOR_ROW_HOVER = Color3.fromRGB(36, 36, 41)
+local COLOR_WHITE     = Color3.fromRGB(240, 240, 245)
+local COLOR_GRAY      = Color3.fromRGB(140, 140, 148)
+local COLOR_STROKE    = Color3.fromRGB(40, 40, 46)
+local COLOR_ACCENT    = Color3.fromRGB(0, 220, 170)
 local FONT            = Enum.Font.GothamMedium
 local FONT_BOLD       = Enum.Font.GothamBold
  
@@ -86,6 +92,21 @@ local anchors = {
 }
 local cornerData = anchors[CORNER] or anchors.TopRight
  
+-- soft drop shadow behind the toggle button (layered semi-transparent frame, no external assets)
+local toggleShadow = Instance.new("Frame")
+toggleShadow.Name = "ToggleShadow"
+toggleShadow.Size = UDim2.new(0, 44, 0, 44)
+toggleShadow.Position = cornerData.pos + UDim2.new(0, 2, 0, 3)
+toggleShadow.AnchorPoint = cornerData.anchor
+toggleShadow.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+toggleShadow.BackgroundTransparency = 0.55
+toggleShadow.ZIndex = 8
+toggleShadow.Parent = screenGui
+ 
+local toggleShadowCorner = Instance.new("UICorner")
+toggleShadowCorner.CornerRadius = UDim.new(0, 12)
+toggleShadowCorner.Parent = toggleShadow
+ 
 local toggleBtn = Instance.new("TextButton")
 toggleBtn.Name = "ToggleButton"
 toggleBtn.Size = UDim2.new(0, 44, 0, 44)
@@ -95,24 +116,48 @@ toggleBtn.BackgroundColor3 = COLOR_PANEL
 toggleBtn.Text = "KX"
 toggleBtn.Font = FONT_BOLD
 toggleBtn.TextSize = 18
-toggleBtn.TextColor3 = COLOR_WHITE
+toggleBtn.TextColor3 = COLOR_ACCENT
 toggleBtn.AutoButtonColor = false
 toggleBtn.ZIndex = 10
 toggleBtn.Parent = screenGui
  
 local toggleCorner = Instance.new("UICorner")
-toggleCorner.CornerRadius = UDim.new(0, 10)
+toggleCorner.CornerRadius = UDim.new(0, 12)
 toggleCorner.Parent = toggleBtn
  
 local toggleStroke = Instance.new("UIStroke")
-toggleStroke.Color = COLOR_STROKE
+toggleStroke.Color = COLOR_ACCENT
+toggleStroke.Transparency = 0.5
 toggleStroke.Thickness = 1
 toggleStroke.Parent = toggleBtn
  
+toggleBtn.MouseEnter:Connect(function()
+	TweenService:Create(toggleBtn, TweenInfo.new(0.15), { BackgroundColor3 = COLOR_ROW_HOVER }):Play()
+	TweenService:Create(toggleStroke, TweenInfo.new(0.15), { Transparency = 0 }):Play()
+end)
+toggleBtn.MouseLeave:Connect(function()
+	TweenService:Create(toggleBtn, TweenInfo.new(0.15), { BackgroundColor3 = COLOR_PANEL }):Play()
+	TweenService:Create(toggleStroke, TweenInfo.new(0.15), { Transparency = 0.5 }):Play()
+end)
+ 
+-- soft drop shadow behind the main panel
+local panelShadow = Instance.new("Frame")
+panelShadow.Name = "PanelShadow"
+panelShadow.Size = UDim2.new(0, 300, 0, 400)
+panelShadow.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+panelShadow.BackgroundTransparency = 0.55
+panelShadow.ZIndex = 8
+panelShadow.Parent = screenGui
+ 
+local panelShadowCorner = Instance.new("UICorner")
+panelShadowCorner.CornerRadius = UDim.new(0, 14)
+panelShadowCorner.Parent = panelShadow
+ 
 local panel = Instance.new("Frame")
 panel.Name = "Panel"
-panel.Size = UDim2.new(0, 300, 0, 380)
+panel.Size = UDim2.new(0, 300, 0, 400)
 panel.BackgroundColor3 = COLOR_BG
+panel.ClipsDescendants = true
 panel.Visible = false
 panel.ZIndex = 10
 panel.Parent = screenGui
@@ -131,8 +176,16 @@ else
 	panel.AnchorPoint = Vector2.new(0, 1)
 end
  
+-- keep the shadow glued to the panel's position/size
+panelShadow.AnchorPoint = panel.AnchorPoint
+local function syncShadowToPanel()
+	panelShadow.Position = panel.Position + UDim2.new(0, 3, 0, 4)
+	panelShadow.Size = panel.Size
+end
+syncShadowToPanel()
+ 
 local panelCorner = Instance.new("UICorner")
-panelCorner.CornerRadius = UDim.new(0, 12)
+panelCorner.CornerRadius = UDim.new(0, 14)
 panelCorner.Parent = panel
  
 local panelStroke = Instance.new("UIStroke")
@@ -141,34 +194,90 @@ panelStroke.Thickness = 1
 panelStroke.Parent = panel
  
 local header = Instance.new("Frame")
-header.Size = UDim2.new(1, 0, 0, 44)
+header.Size = UDim2.new(1, 0, 0, 48)
 header.BackgroundColor3 = COLOR_PANEL
 header.ZIndex = 10
 header.Parent = panel
  
 local headerCorner = Instance.new("UICorner")
-headerCorner.CornerRadius = UDim.new(0, 12)
+headerCorner.CornerRadius = UDim.new(0, 14)
 headerCorner.Parent = header
  
 local headerMask = Instance.new("Frame")
-headerMask.Size = UDim2.new(1, 0, 0, 12)
-headerMask.Position = UDim2.new(0, 0, 1, -12)
+headerMask.Size = UDim2.new(1, 0, 0, 14)
+headerMask.Position = UDim2.new(0, 0, 1, -14)
 headerMask.BackgroundColor3 = COLOR_PANEL
 headerMask.BorderSizePixel = 0
 headerMask.ZIndex = 10
 headerMask.Parent = header
  
+-- thin accent line under the header, like Nameless Admin / Infinite Yield's colored dividers
+local headerAccent = Instance.new("Frame")
+headerAccent.Size = UDim2.new(1, 0, 0, 2)
+headerAccent.Position = UDim2.new(0, 0, 1, 0)
+headerAccent.BackgroundColor3 = COLOR_ACCENT
+headerAccent.BorderSizePixel = 0
+headerAccent.ZIndex = 11
+headerAccent.Parent = header
+ 
+local accentDot = Instance.new("Frame")
+accentDot.Size = UDim2.new(0, 8, 0, 8)
+accentDot.Position = UDim2.new(0, 14, 0.5, -4)
+accentDot.BackgroundColor3 = COLOR_ACCENT
+accentDot.ZIndex = 11
+accentDot.Parent = header
+ 
+local accentDotCorner = Instance.new("UICorner")
+accentDotCorner.CornerRadius = UDim.new(1, 0)
+accentDotCorner.Parent = accentDot
+ 
 local title = Instance.new("TextLabel")
-title.Size = UDim2.new(1, -20, 1, 0)
-title.Position = UDim2.new(0, 14, 0, 0)
+title.Size = UDim2.new(1, -80, 1, 0)
+title.Position = UDim2.new(0, 30, 0, 0)
 title.BackgroundTransparency = 1
-title.Text = "KRYLONIX PANEL"
+title.Text = "KRYLONIX"
 title.Font = FONT_BOLD
-title.TextSize = 14
+title.TextSize = 15
 title.TextColor3 = COLOR_WHITE
 title.TextXAlignment = Enum.TextXAlignment.Left
 title.ZIndex = 11
 title.Parent = header
+ 
+local subtitle = Instance.new("TextLabel")
+subtitle.Size = UDim2.new(0, 60, 0, 14)
+subtitle.Position = UDim2.new(0, 30, 0, 27)
+subtitle.BackgroundTransparency = 1
+subtitle.Text = "PANEL"
+subtitle.Font = FONT
+subtitle.TextSize = 10
+subtitle.TextColor3 = COLOR_ACCENT
+subtitle.TextXAlignment = Enum.TextXAlignment.Left
+subtitle.ZIndex = 11
+subtitle.Parent = header
+ 
+-- close (x) button in the header, in addition to the corner toggle
+local closeBtn = Instance.new("TextButton")
+closeBtn.Size = UDim2.new(0, 28, 0, 28)
+closeBtn.Position = UDim2.new(1, -38, 0.5, -14)
+closeBtn.BackgroundColor3 = COLOR_ROW
+closeBtn.Text = "×"
+closeBtn.Font = FONT_BOLD
+closeBtn.TextSize = 18
+closeBtn.TextColor3 = COLOR_GRAY
+closeBtn.AutoButtonColor = false
+closeBtn.ZIndex = 11
+closeBtn.Parent = header
+ 
+local closeBtnCorner = Instance.new("UICorner")
+closeBtnCorner.CornerRadius = UDim.new(0, 8)
+closeBtnCorner.Parent = closeBtn
+ 
+closeBtn.MouseEnter:Connect(function()
+	TweenService:Create(closeBtn, TweenInfo.new(0.15), { BackgroundColor3 = COLOR_ROW_HOVER, TextColor3 = COLOR_WHITE }):Play()
+end)
+closeBtn.MouseLeave:Connect(function()
+	TweenService:Create(closeBtn, TweenInfo.new(0.15), { BackgroundColor3 = COLOR_ROW, TextColor3 = COLOR_GRAY }):Play()
+end)
  
 ----------------------------------------------------------------
 -- DRAGGING (drag the panel by its header, mouse + touch)
@@ -192,6 +301,7 @@ do
 			dragStartPanelPos.X.Scale, dragStartPanelPos.X.Offset + delta.X,
 			dragStartPanelPos.Y.Scale, dragStartPanelPos.Y.Offset + delta.Y
 		)
+		syncShadowToPanel()
 	end
  
 	header.InputBegan:Connect(function(input)
@@ -233,9 +343,20 @@ searchStroke.Color = COLOR_STROKE
 searchStroke.Thickness = 1
 searchStroke.Parent = searchHolder
  
+local searchIcon = Instance.new("TextLabel")
+searchIcon.Size = UDim2.new(0, 16, 1, 0)
+searchIcon.Position = UDim2.new(0, 8, 0, 0)
+searchIcon.BackgroundTransparency = 1
+searchIcon.Text = "⌕"
+searchIcon.Font = FONT_BOLD
+searchIcon.TextSize = 16
+searchIcon.TextColor3 = COLOR_GRAY
+searchIcon.ZIndex = 11
+searchIcon.Parent = searchHolder
+ 
 local searchBox = Instance.new("TextBox")
-searchBox.Size = UDim2.new(1, -20, 1, 0)
-searchBox.Position = UDim2.new(0, 10, 0, 0)
+searchBox.Size = UDim2.new(1, -34, 1, 0)
+searchBox.Position = UDim2.new(0, 26, 0, 0)
 searchBox.BackgroundTransparency = 1
 searchBox.PlaceholderText = "Search commands..."
 searchBox.PlaceholderColor3 = COLOR_GRAY
@@ -247,6 +368,13 @@ searchBox.TextXAlignment = Enum.TextXAlignment.Left
 searchBox.ClearTextOnFocus = false
 searchBox.ZIndex = 11
 searchBox.Parent = searchHolder
+ 
+searchBox.Focused:Connect(function()
+	TweenService:Create(searchStroke, TweenInfo.new(0.15), { Color = COLOR_ACCENT, Transparency = 0 }):Play()
+end)
+searchBox.FocusLost:Connect(function()
+	TweenService:Create(searchStroke, TweenInfo.new(0.15), { Color = COLOR_STROKE, Transparency = 0 }):Play()
+end)
  
 local listFrame = Instance.new("ScrollingFrame")
 listFrame.Size = UDim2.new(1, -24, 1, -180)
@@ -311,6 +439,13 @@ runBtn.Parent = panel
 local runCorner = Instance.new("UICorner")
 runCorner.CornerRadius = UDim.new(0, 8)
 runCorner.Parent = runBtn
+ 
+runBtn.MouseEnter:Connect(function()
+	TweenService:Create(runBtn, TweenInfo.new(0.15), { BackgroundColor3 = COLOR_ACCENT }):Play()
+end)
+runBtn.MouseLeave:Connect(function()
+	TweenService:Create(runBtn, TweenInfo.new(0.15), { BackgroundColor3 = COLOR_WHITE }):Play()
+end)
  
 ----------------------------------------------------------------
 -- DRAGGABLE
@@ -1444,8 +1579,43 @@ local function populateList(filter)
 	filter = (filter or ""):lower()
  
 	local order = 0
+	local lastCategory = nil
+ 
 	for _, cmd in ipairs(COMMANDS) do
 		if filter == "" or cmd.name:find(filter, 1, true) or cmd.usage:lower():find(filter, 1, true) then
+ 
+			if cmd.category and cmd.category ~= lastCategory then
+				lastCategory = cmd.category
+				order += 1
+ 
+				local categoryLabel = Instance.new("Frame")
+				categoryLabel.Size = UDim2.new(1, 0, 0, 22)
+				categoryLabel.BackgroundTransparency = 1
+				categoryLabel.LayoutOrder = order
+				categoryLabel.ZIndex = 10
+				categoryLabel.Parent = listFrame
+ 
+				local catBar = Instance.new("Frame")
+				catBar.Size = UDim2.new(0, 3, 0, 12)
+				catBar.Position = UDim2.new(0, 2, 0.5, -6)
+				catBar.BackgroundColor3 = COLOR_ACCENT
+				catBar.BorderSizePixel = 0
+				catBar.ZIndex = 11
+				catBar.Parent = categoryLabel
+ 
+				local catText = Instance.new("TextLabel")
+				catText.Size = UDim2.new(1, -14, 1, 0)
+				catText.Position = UDim2.new(0, 10, 0, 0)
+				catText.BackgroundTransparency = 1
+				catText.Text = string.upper(cmd.category)
+				catText.Font = FONT_BOLD
+				catText.TextSize = 11
+				catText.TextColor3 = COLOR_GRAY
+				catText.TextXAlignment = Enum.TextXAlignment.Left
+				catText.ZIndex = 11
+				catText.Parent = categoryLabel
+			end
+ 
 			order += 1
  
 			local row = Instance.new("Frame")
@@ -1459,12 +1629,27 @@ local function populateList(filter)
 			rowCorner.CornerRadius = UDim.new(0, 8)
 			rowCorner.Parent = row
  
+			local rowStroke = Instance.new("UIStroke")
+			rowStroke.Color = COLOR_STROKE
+			rowStroke.Transparency = 1
+			rowStroke.Thickness = 1
+			rowStroke.Parent = row
+ 
 			local rowBtn = Instance.new("TextButton")
 			rowBtn.Size = UDim2.new(1, 0, 1, 0)
 			rowBtn.BackgroundTransparency = 1
 			rowBtn.Text = ""
 			rowBtn.ZIndex = 11
 			rowBtn.Parent = row
+ 
+			local accentBar = Instance.new("Frame")
+			accentBar.Size = UDim2.new(0, 3, 0.6, 0)
+			accentBar.Position = UDim2.new(0, 0, 0.2, 0)
+			accentBar.BackgroundColor3 = COLOR_ACCENT
+			accentBar.BackgroundTransparency = 1
+			accentBar.BorderSizePixel = 0
+			accentBar.ZIndex = 11
+			accentBar.Parent = row
  
 			local nameLabel = Instance.new("TextLabel")
 			nameLabel.Size = UDim2.new(1, -16, 0, 18)
@@ -1491,10 +1676,14 @@ local function populateList(filter)
 			descLabel.Parent = row
  
 			rowBtn.MouseEnter:Connect(function()
-				row.BackgroundColor3 = COLOR_ROW_HOVER
+				TweenService:Create(row, TweenInfo.new(0.15), { BackgroundColor3 = COLOR_ROW_HOVER }):Play()
+				TweenService:Create(rowStroke, TweenInfo.new(0.15), { Transparency = 0.4 }):Play()
+				TweenService:Create(accentBar, TweenInfo.new(0.15), { BackgroundTransparency = 0 }):Play()
 			end)
 			rowBtn.MouseLeave:Connect(function()
-				row.BackgroundColor3 = COLOR_ROW
+				TweenService:Create(row, TweenInfo.new(0.15), { BackgroundColor3 = COLOR_ROW }):Play()
+				TweenService:Create(rowStroke, TweenInfo.new(0.15), { Transparency = 1 }):Play()
+				TweenService:Create(accentBar, TweenInfo.new(0.15), { BackgroundTransparency = 1 }):Play()
 			end)
 			rowBtn.MouseButton1Click:Connect(function()
 				if cmd.name == "prefix" then
@@ -1535,17 +1724,44 @@ end)
 -- TOGGLE PANEL
 ----------------------------------------------------------------
  
+----------------------------------------------------------------
+-- TOGGLE PANEL (animated)
+----------------------------------------------------------------
+ 
+local FULL_SIZE = UDim2.new(0, 300, 0, 400)
+local COLLAPSED_SIZE = UDim2.new(0, 300, 0, 0)
+ 
 local open = false
+ 
 local function setOpen(state)
 	open = state
-	panel.Visible = open
+ 
 	if open then
+		panel.Visible = true
+		panelShadow.Visible = true
+		panel.Size = COLLAPSED_SIZE
+		TweenService:Create(panel, TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), { Size = FULL_SIZE }):Play()
+		TweenService:Create(panelShadow, TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), { Size = FULL_SIZE }):Play()
 		searchBox:CaptureFocus()
+	else
+		local tween = TweenService:Create(panel, TweenInfo.new(0.18, Enum.EasingStyle.Quint, Enum.EasingDirection.In), { Size = COLLAPSED_SIZE })
+		TweenService:Create(panelShadow, TweenInfo.new(0.18, Enum.EasingStyle.Quint, Enum.EasingDirection.In), { Size = COLLAPSED_SIZE }):Play()
+		tween:Play()
+		tween.Completed:Connect(function()
+			if not open then
+				panel.Visible = false
+				panelShadow.Visible = false
+			end
+		end)
 	end
 end
  
 toggleBtn.MouseButton1Click:Connect(function()
 	setOpen(not open)
+end)
+ 
+closeBtn.MouseButton1Click:Connect(function()
+	setOpen(false)
 end)
  
 ----------------------------------------------------------------
@@ -1615,3 +1831,4 @@ LocalPlayer.CharacterAdded:Connect(function(char)
 end)
  
 print("[AdminPanel] Loaded. Prefix: " .. PREFIX)
+ 
