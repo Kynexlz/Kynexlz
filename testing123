@@ -1,4 +1,4 @@
- 
+
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
@@ -766,7 +766,7 @@ local function stopFly()
 		hum.PlatformStand = false
 	end
 	if char then
-		setFlyPose(char, false)
+		pcall(setFlyPose, char, false)
 	end
 	destroyFlyControlButtons()
 end
@@ -794,7 +794,7 @@ local function startFly(mode)
 	bg.Parent = hrp
  
 	hum.PlatformStand = true
-	setFlyPose(char, true)
+	pcall(setFlyPose, char, true)
  
 	if flyMode == "mobile" then
 		makeFlyControlButtons()
@@ -839,11 +839,18 @@ local function startFly(mode)
 		if curBv then
 			curBv.Velocity = moveVector * speed
 		end
-		if curBg and moveVector.Magnitude > 0.05 then
-			local flatMove = Vector3.new(moveVector.X, 0, moveVector.Z)
-			local lookTarget = curHrp.Position + (flatMove.Magnitude > 0.05 and flatMove or Vector3.new(0, 0, -1))
-			local tilt = math.clamp(moveVector.Y, -1, 1) * math.rad(20)
-			curBg.CFrame = CFrame.new(curHrp.Position, lookTarget) * CFrame.Angles(-tilt, 0, 0)
+		if curBg then
+			if moveVector.Magnitude > 0.05 then
+				local flatMove = Vector3.new(moveVector.X, 0, moveVector.Z)
+				local lookTarget = curHrp.Position + (flatMove.Magnitude > 0.05 and flatMove or Vector3.new(0, 0, -1))
+				local tilt = math.clamp(moveVector.Y, -1, 1) * math.rad(20)
+				curBg.CFrame = CFrame.new(curHrp.Position, lookTarget) * CFrame.Angles(-tilt, 0, 0)
+			else
+				local camera = workspace.CurrentCamera
+				if camera then
+					curBg.CFrame = CFrame.new(curHrp.Position, curHrp.Position + camera.CFrame.LookVector)
+				end
+			end
 		end
 	end)
 end
@@ -1305,7 +1312,7 @@ function stopRocketFly()
 		hum.PlatformStand = false
 	end
 	if char then
-		setFlyPose(char, false)
+		pcall(setFlyPose, char, false)
 	end
 	destroyFlyControlButtons()
 end
@@ -1336,7 +1343,7 @@ local function startRocketFly(mode)
  
 	hum.PlatformStand = true
 	makeRocketExhaust(hrp)
-	setFlyPose(char, true)
+	pcall(setFlyPose, char, true)
  
 	if mode == "mobile" then
 		makeFlyControlButtons()
@@ -1390,6 +1397,11 @@ local function startRocketFly(mode)
 				local lookTarget = curHrp.Position + (flatMove.Magnitude > 0.05 and flatMove or Vector3.new(0, 0, -1))
 				local tilt = math.clamp(moveVector.Y, -1, 1) * math.rad(25)
 				curBg.CFrame = CFrame.new(curHrp.Position, lookTarget) * CFrame.Angles(-tilt, 0, 0)
+			else
+				local camera = workspace.CurrentCamera
+				if camera then
+					curBg.CFrame = CFrame.new(curHrp.Position, curHrp.Position + camera.CFrame.LookVector)
+				end
 			end
 		end
 	end)
@@ -1527,20 +1539,38 @@ end
  
 Commands["fling"] = function(args)
 	local targetName = args[1]
-	if not targetName then return end
-	local target = findPlayerByName(targetName)
+	local target = targetName and findPlayerByName(targetName) or LocalPlayer
 	if not target then return end
  
-	local targetChar = target.Character
-	local targetHrp = targetChar and targetChar:FindFirstChild("HumanoidRootPart")
-	if not targetHrp then return end
+	-- cancel any existing fling effects on this target first so they don't fight each other
+	stopLoopFling(target)
  
-	local bv = Instance.new("BodyVelocity")
-	bv.Name = "AdminFlingForce"
-	bv.MaxForce = Vector3.new(1e5, 1e5, 1e5)
-	bv.Velocity = randomFlingVelocity()
-	bv.Parent = targetHrp
-	Debris:AddItem(bv, 0.6)
+	local duration = 1
+	local startTime = os.clock()
+ 
+	local conn
+	conn = RunService.Heartbeat:Connect(function()
+		if os.clock() - startTime > duration then
+			stopLoopFling(target)
+			return
+		end
+ 
+		local char = target.Character
+		local hrp = char and char:FindFirstChild("HumanoidRootPart")
+		if not hrp then return end
+ 
+		local bv = hrp:FindFirstChild("AdminFlingForce")
+		if not bv then
+			bv = Instance.new("BodyVelocity")
+			bv.Name = "AdminFlingForce"
+			bv.MaxForce = Vector3.new(1e5, 1e5, 1e5)
+			bv.Parent = hrp
+		end
+		-- reapplying every frame (instead of setting it once) fights the server's
+		-- network-ownership correction long enough to actually be visible
+		bv.Velocity = randomFlingVelocity()
+	end)
+	loopFlingConns[target] = conn
 end
  
 Commands["unfling"] = function(args)
@@ -1665,8 +1695,9 @@ Commands["loopspeed"] = function(args)
 end
  
 Commands["bang"] = function(args)
-	-- cosmetic explosion effect only: BlastPressure 0 means no physics force,
-	-- so this can't actually damage or knock back a player
+	-- cosmetic-only: BlastPressure 0 means no physics force and no damage to anyone.
+	-- Layered with a particle burst + light flash as a backup in case the bare
+	-- Explosion instance doesn't render reliably on its own.
 	local target = args[1] and findPlayerByName(args[1]) or LocalPlayer
 	if not target then return end
 	local char = target.Character
@@ -1677,7 +1708,32 @@ Commands["bang"] = function(args)
 	explosion.Position = hrp.Position
 	explosion.BlastRadius = 8
 	explosion.BlastPressure = 0
+	explosion.Visible = true
 	explosion.Parent = workspace
+ 
+	local attachment = Instance.new("Attachment")
+	attachment.Parent = hrp
+ 
+	local flash = Instance.new("PointLight")
+	flash.Color = Color3.fromRGB(255, 200, 120)
+	flash.Range = 20
+	flash.Brightness = 8
+	flash.Parent = attachment
+	Debris:AddItem(flash, 0.3)
+ 
+	local burst = Instance.new("ParticleEmitter")
+	burst.Texture = "rbxasset://textures/particles/fire_main.dds"
+	burst.Rate = 0
+	burst.Lifetime = NumberRange.new(0.3, 0.6)
+	burst.Speed = NumberRange.new(15, 30)
+	burst.SpreadAngle = Vector2.new(180, 180)
+	burst.Size = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 2.5),
+		NumberSequenceKeypoint.new(1, 0),
+	})
+	burst.Parent = attachment
+	burst:Emit(40)
+	Debris:AddItem(attachment, 1)
 end
  
 Commands["freecam"] = function(args)
