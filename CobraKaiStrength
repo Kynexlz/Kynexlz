@@ -1,0 +1,24 @@
+_G.Krylonix = true
+while _G.Krylonix do
+   wait()
+       if _G.Krylonix == false then
+               return
+               end
+               if _G.Krylonix == true then
+
+game:GetService("ReplicatedStorage").Remotes.JumpKick:FireServer()
+               wait()
+                            game:GetService("ReplicatedStorage").Remotes.HandKick:FireServer()
+                            wait()
+                                         game:GetService("ReplicatedStorage").Remotes.DoubleReg:FireServer()
+                                         wait()
+                                                    game:GetService("ReplicatedStorage").Remotes.LeftPunch:FireServer()
+                                                    wait()
+                                                                game:GetService("ReplicatedStorage").Remotes.RightPunch:FireServer()
+                                                                wait()
+                                                                            game:GetService("ReplicatedStorage").Remotes.PushUp:FireServer()
+                                                                            wait()
+                                                                                    game:GetService("ReplicatedStorage").Remotes.SitUp:FireServer()
+                                                                                    wait()
+end
+end
