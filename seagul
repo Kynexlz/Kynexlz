@@ -1,0 +1,139 @@
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+
+local player = Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local hrp = character:WaitForChild("HumanoidRootPart")
+
+player.CharacterAdded:Connect(function(char)
+	character = char
+	hrp = char:WaitForChild("HumanoidRootPart")
+end)
+
+-- Remove old GUI
+pcall(function()
+	player.PlayerGui.justsscriptsHub:Destroy()
+end)
+
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "justsscriptsHub"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.Parent = player.PlayerGui
+
+local Main = Instance.new("Frame")
+Main.Size = UDim2.new(0,260,0,160)
+Main.Position = UDim2.new(0.5,-130,0.5,-80)
+Main.BackgroundColor3 = Color3.fromRGB(18,18,18)
+Main.BorderSizePixel = 0
+Main.Parent = ScreenGui
+
+Instance.new("UICorner",Main).CornerRadius = UDim.new(0,10)
+
+local Stroke = Instance.new("UIStroke")
+Stroke.Color = Color3.fromRGB(50,50,50)
+Stroke.Thickness = 1.5
+Stroke.Parent = Main
+
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(1,0,0,35)
+Title.BackgroundTransparency = 1
+Title.Text = "Honor Farmer"
+Title.TextColor3 = Color3.new(1,1,1)
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 22
+Title.Parent = Main
+
+local Credits = Instance.new("TextLabel")
+Credits.Size = UDim2.new(1,0,0,20)
+Credits.Position = UDim2.new(0,0,0,30)
+Credits.BackgroundTransparency = 1
+Credits.Text = "by justsscripts"
+Credits.TextColor3 = Color3.fromRGB(150,150,150)
+Credits.Font = Enum.Font.Gotham
+Credits.TextSize = 13
+Credits.Parent = Main
+
+local Toggle = Instance.new("TextButton")
+Toggle.Size = UDim2.new(.85,0,0,45)
+Toggle.Position = UDim2.new(.075,0,.48,0)
+Toggle.BackgroundColor3 = Color3.fromRGB(35,35,35)
+Toggle.Text = "Auto Farm: OFF"
+Toggle.Font = Enum.Font.GothamBold
+Toggle.TextSize = 18
+Toggle.TextColor3 = Color3.new(1,1,1)
+Toggle.Parent = Main
+Instance.new("UICorner",Toggle).CornerRadius = UDim.new(0,8)
+
+-- Draggable (Mobile + PC)
+local dragging=false
+local dragInput
+local dragStart
+local startPos
+
+local UIS=game:GetService("UserInputService")
+
+Main.InputBegan:Connect(function(input)
+	if input.UserInputType==Enum.UserInputType.MouseButton1 or input.UserInputType==Enum.UserInputType.Touch then
+		dragging=true
+		dragStart=input.Position
+		startPos=Main.Position
+
+		input.Changed:Connect(function()
+			if input.UserInputState==Enum.UserInputState.End then
+				dragging=false
+			end
+		end)
+	end
+end)
+
+Main.InputChanged:Connect(function(input)
+	if input.UserInputType==Enum.UserInputType.MouseMovement or input.UserInputType==Enum.UserInputType.Touch then
+		dragInput=input
+	end
+end)
+
+UIS.InputChanged:Connect(function(input)
+	if input==dragInput and dragging then
+		local delta=input.Position-dragStart
+		Main.Position=UDim2.new(
+			startPos.X.Scale,
+			startPos.X.Offset+delta.X,
+			startPos.Y.Scale,
+			startPos.Y.Offset+delta.Y
+		)
+	end
+end)
+
+local enabled=false
+
+local function tp(part)
+	if hrp and part then
+		hrp.CFrame = part.CFrame + Vector3.new(0,3,0)
+	end
+end
+
+Toggle.MouseButton1Click:Connect(function()
+	enabled = not enabled
+
+	if enabled then
+		Toggle.Text="Auto Farm: ON"
+		Toggle.BackgroundColor3=Color3.fromRGB(0,170,80)
+
+		task.spawn(function()
+			while enabled do
+				for i=1,10 do
+					local part = workspace:FindFirstChild("Honor"..i,true)
+					if part then
+						tp(part)
+						task.wait(0.4)
+					end
+				end
+				task.wait(0.2)
+			end
+		end)
+
+	else
+		Toggle.Text="Auto Farm: OFF"
+		Toggle.BackgroundColor3=Color3.fromRGB(35,35,35)
+	end
+end)
