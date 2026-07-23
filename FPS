@@ -1,0 +1,23 @@
+local RS=game:GetService("RunService")
+local TCS=game:GetService("TextChatService")
+
+local fps=0
+do
+	local f,t=0,os.clock()
+	RS.RenderStepped:Connect(function()
+		f+=1
+		if os.clock()-t>=1 then
+			fps=f
+			f=0
+			t=os.clock()
+		end
+	end)
+end
+
+game.Players.LocalPlayer.Chatted:Connect(function(m)
+	if m:lower()=="!fps" then
+		TCS.TextChannels.RBXGeneral:DisplaySystemMessage(
+			"<font color='#00ff00'>Current FPS: "..fps.."</font>"
+		)
+	end
+end)
