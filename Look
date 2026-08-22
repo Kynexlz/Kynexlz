@@ -1,0 +1,25 @@
+local p=game.Players.LocalPlayer
+local rs=game:GetService("RunService")
+local target
+
+p.Chatted:Connect(function(m)
+	local u=m:match("^!look%s+@?(.+)")
+	if u then
+		target=game.Players:FindFirstChild(u)
+		if target then
+			rs:BindToRenderStep("LookAt",1,function()
+				local c=p.Character
+				local tc=target.Character
+				local hrp=c and c:FindFirstChild("HumanoidRootPart")
+				local thrp=tc and tc:FindFirstChild("HumanoidRootPart")
+				if hrp and thrp then
+					local pos=hrp.Position
+					hrp.CFrame=CFrame.lookAt(pos,Vector3.new(thrp.Position.X,pos.Y,thrp.Position.Z))
+				end
+			end)
+		end
+	elseif m:lower()=="!unlook" then
+		target=nil
+		rs:UnbindFromRenderStep("LookAt")
+	end
+end)
