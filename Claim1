@@ -1,0 +1,8 @@
+local args = {
+    [1] = 3,
+    [2] = 1,
+    [3] = 2,
+    [4] = workspace.Scene.Area.BonusAreaHuman:GetChildren()[4]
+}
+
+game:GetService("ReplicatedStorage").Bindable.Area.CommAreaCampChanged:Fire(unpack(args))
