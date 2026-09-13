@@ -1,0 +1,140 @@
+local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
+
+local Window = Rayfield:CreateWindow({
+    Name = "Dungeon Quest Reborn",
+    LoadingTitle = "loading...",
+    LoadingSubtitle = "MobileExploits",
+    ConfigurationSaving = {
+        Enabled = false
+    }
+})
+
+local Tab = Window:CreateTab("Main", 4483362458)
+
+local autoSwing = false
+local autoAbility = false
+
+Tab:CreateToggle({
+    Name = "Auto Swing",
+    CurrentValue = false,
+    Flag = "AutoSwing",
+    Callback = function(Value)
+        autoSwing = Value
+
+        if autoSwing then
+            task.spawn(function()
+                while autoSwing do
+                    local player = game:GetService("Players").LocalPlayer
+                    local character = player.Character
+
+                    if character then
+                        local swing = character:FindFirstChild("dualRight")
+
+                        if swing then
+                            swing = swing:FindFirstChild("swing")
+
+                            if swing and swing:IsA("RemoteEvent") then
+                                swing:FireServer()
+                            end
+                        end
+                    end
+
+                    task.wait()
+                end
+            end)
+        end
+    end,
+})
+
+Tab:CreateToggle({
+    Name = "Auto Ability",
+    CurrentValue = false,
+    Flag = "AutoAbility",
+    Callback = function(Value)
+        autoAbility = Value
+
+        if autoAbility then
+            task.spawn(function()
+                while autoAbility do
+                    local player = game:GetService("Players").LocalPlayer
+                    local abilityEvent = player:FindFirstChild("abilityEvent")
+
+                    if abilityEvent and abilityEvent:IsA("RemoteEvent") then
+                        abilityEvent:FireServer()
+                    end
+
+                    task.wait()
+                end
+            end)
+        end
+    end,
+})
+
+local OthersTab = Window:CreateTab("Others", 4483362458)
+
+-- Speed Slider
+OthersTab:CreateSlider({
+    Name = "Speed",
+    Range = {16, 200},
+    Increment = 1,
+    Suffix = " Speed",
+    CurrentValue = 16,
+    Flag = "Speed",
+    Callback = function(Value)
+        local player = game:GetService("Players").LocalPlayer
+        local character = player.Character
+        local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+
+        if humanoid then
+            humanoid.WalkSpeed = Value
+        end
+    end,
+})
+
+-- JumpPower Slider
+OthersTab:CreateSlider({
+    Name = "JumpPower",
+    Range = {50, 200},
+    Increment = 1,
+    Suffix = " JumpPower",
+    CurrentValue = 50,
+    Flag = "JumpPower",
+    Callback = function(Value)
+        local player = game:GetService("Players").LocalPlayer
+        local character = player.Character
+        local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+
+        if humanoid then
+            humanoid.UseJumpPower = true
+            humanoid.JumpPower = Value
+        end
+    end,
+})
+
+-- NoClip Toggle
+local noClip = false
+
+OthersTab:CreateToggle({
+    Name = "NoClip",
+    CurrentValue = false,
+    Flag = "NoClip",
+    Callback = function(Value)
+        noClip = Value
+    end,
+})
+
+-- NoClip Loop
+game:GetService("RunService").Stepped:Connect(function()
+    if noClip then
+        local player = game:GetService("Players").LocalPlayer
+        local character = player.Character
+
+        if character then
+            for _, part in ipairs(character:GetDescendants()) do
+                if part:IsA("BasePart") then
+                    part.CanCollide = false
+                end
+            end
+        end
+    end
+end)
