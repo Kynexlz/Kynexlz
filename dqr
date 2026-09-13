@@ -46,6 +46,8 @@ Tab:CreateToggle({
     end,
 })
 
+local autoAbility = false
+
 Tab:CreateToggle({
     Name = "Auto Ability",
     CurrentValue = false,
@@ -57,10 +59,17 @@ Tab:CreateToggle({
             task.spawn(function()
                 while autoAbility do
                     local player = game:GetService("Players").LocalPlayer
-                    local abilityEvent = player:FindFirstChild("abilityEvent")
 
+                    -- Ability Event
+                    local abilityEvent = player:FindFirstChild("abilityEvent")
                     if abilityEvent and abilityEvent:IsA("RemoteEvent") then
                         abilityEvent:FireServer()
+                    end
+
+                    -- Local Event
+                    local localEvent = player:FindFirstChild("localEvent")
+                    if localEvent then
+                        localEvent:Fire()
                     end
 
                     task.wait()
