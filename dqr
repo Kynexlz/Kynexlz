@@ -12,7 +12,19 @@ local Window = Rayfield:CreateWindow({
 local Tab = Window:CreateTab("Main", 4483362458)
 
 local autoSwing = false
-local autoAbility = false
+local swingRange = 25
+
+Tab:CreateSlider({
+    Name = "Auto Swing Range",
+    Range = {10, 1000},
+    Increment = 1,
+    Suffix = " Studs",
+    CurrentValue = 25,
+    Flag = "AutoSwingRange",
+    Callback = function(Value)
+        swingRange = Value
+    end,
+})
 
 Tab:CreateToggle({
     Name = "Auto Swing",
@@ -26,12 +38,30 @@ Tab:CreateToggle({
                 while autoSwing do
                     local player = game:GetService("Players").LocalPlayer
                     local character = player.Character
+                    local root = character and character:FindFirstChild("HumanoidRootPart")
 
-                    if character then
-                        local swing = character:FindFirstChild("dualRight")
+                    if root then
+                        local targetNearby = false
 
-                        if swing then
-                            swing = swing:FindFirstChild("swing")
+                        for _, target in ipairs(workspace:GetDescendants()) do
+                            if target:IsA("Model") and target ~= character then
+                                local targetRoot = target:FindFirstChild("HumanoidRootPart")
+                                local humanoid = target:FindFirstChildOfClass("Humanoid")
+
+                                if targetRoot and humanoid and humanoid.Health > 0 then
+                                    local distance = (root.Position - targetRoot.Position).Magnitude
+
+                                    if distance <= swingRange then
+                                        targetNearby = true
+                                        break
+                                    end
+                                end
+                            end
+                        end
+
+                        if targetNearby then
+                            local dualRight = character:FindFirstChild("dualRight")
+                            local swing = dualRight and dualRight:FindFirstChild("swing")
 
                             if swing and swing:IsA("RemoteEvent") then
                                 swing:FireServer()
