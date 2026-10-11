@@ -45,7 +45,15 @@ local function startStatLoop()
                     nil,
                     " "
                 })
-                task.wait(1)
+                task.wait(0.9)
+            end
+
+            if BenchPressEnabled then
+                Event:FireServer({
+                    nil,
+                    "("
+                })
+                task.wait(0.9)
             end
         end
 
@@ -81,6 +89,23 @@ StatTab:CreateToggle({
     value = false,
     callback = function(enabled)
         StrengthEnabled = enabled
+        if enabled then
+            startStatLoop()
+        end
+    end,
+})
+
+local divider = StatTab:CreateDivider()
+
+divider:Set("Gamepass")
+divider:Set("Gamepass")
+
+
+StatTab:CreateToggle({
+    name = "Bench Press",
+    value = false,
+    callback = function(enabled)
+        BenchPressEnabled = enabled
         if enabled then
             startStatLoop()
         end
